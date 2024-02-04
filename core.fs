@@ -1,0 +1,105 @@
+: CELL+ 4 + ;
+: CELLS 4 * ;
+: CHAR+ 1 + ;
+: CHARS ;
+
+: HERE 0 ;
+: PAD 2 ;
+: >IN 5 ;
+: STATE 8 ;
+: BASE 9 ;
+: DECIMAL 10 BASE ! ;
+: HEX 16 BASE ! ;
+
+: DUP 6 @ @ ;
+: DROP DUP - + ;
+: OVER 6 @ CELL+ @ ;
+: 2DUP OVER OVER ;
+: 2DROP DROP DROP ;
+: SWAP 2DUP 6 @ 3 CELLS + ! 6 @ CELL+ ! ;
+: NIP SWAP DROP ;
+: TUCK DUP ROT SWAP ;
+: R@ 3 @ CELL+ @ ;
+: >REXIT 3 @ ! ;
+: >R R@ SWAP 3 @ ! >REXIT ;
+: R> ; ( TODO )
+: ROT >R SWAP R> SWAP ;
+: -ROT ROT ROT ;
+: 2>R SWAP >R >R ;
+: 2R@ R> R> 2DUP >R >R SWAP ;
+: 2R> R> R> SWAP ;
+: 2SWAP >R -ROT R> -ROT ;
+: 2OVER 2SWAP 2>R 2R@ 2SWAP 2R> ;
+
+: 1+ 1 + ;
+: 1- 1 - ;
+: 2* 2 * ;
+: 2/ 2 / ;
+: INVERT DUP NAND ;
+: AND NAND INVERT ;
+: OR INVERT SWAP INVERT NAND ;
+: XOR 2DUP OR -ROT NAND AND ;
+: NEGATE INVERT 1+ ;
+: - NEGATE + ;
+: = - 0= ;
+: <> = INVERT ;
+: 0<> 0= INVERT ;
+: < - 0< ;
+: > - 0> ;
+: FALSE 0 ;
+: TRUE -1 ;
+
+: C, HERE @ C! HERE @ CELL+ HERE ! ;
+: , HERE @ ! HERE @ CELL+ HERE ! ;
+: +! SWAP OVER @ + SWAP ! ;
+: 2! SWAP OVER ! CELL+ ! ;
+: 2@ DUP CELL+ @ SWAP @ ;
+
+: ['] 3 @ @ DUP CELL+ 3 @ ! @ ;
+: [ 0 STATE ! ; IMMEDIATE
+: ] 1 STATE ! ;
+
+: BRANCH R> DUP @ + >R ;
+: ?BRANCH 0= R@ @ 1 CELLS - AND 3 @ @ + CELL+ 3 @ ! ;
+: IF ['] ?BRANCH , HERE @ 0 , ; IMMEDIATE
+: ELSE ['] BRANCH , HERE @ 0 , SWAP DUP HERE @ SWAP - SWAP ! ; IMMEDIATE
+: THEN DUP HERE @ SWAP - SWAP ! ; IMMEDIATE
+: BEGIN HERE @ ; IMMEDIATE
+: WHILE ['] ?BRANCH , HERE @ 0 , ; IMMEDIATE
+: REPEAT SWAP ['] BRANCH , HERE @ - , DUP HERE @ SWAP - SWAP ! ; IMMEDIATE
+: UNTIL ['] ?BRANCH , HERE @ - , ; IMMEDIATE
+: DO HERE @ ['] >R , ['] >R , ; IMMEDIATE
+: +LOOP ['] R> , ['] R> , ['] LIT , , ['] + , ['] 2DUP , ['] = ,
+        ['] ?BRANCH , HERE @ - , ['] 2DROP , ; IMMEDIATE
+: LOOP 1 +LOOP ; IMMEDIATE
+: I R@ ;
+: J R> R@ SWAP >R ;
+
+: CREATE : ['] LIT , HERE @ 2 CELLS + , ['] EXIT , REVEAL 0 STATE !
+: ALLOT HERE @ + HERE ! ;
+: VARIABLE CREATE 0 , ;
+: CONSTANT CREATE , DOES> @ ;
+
+: ?DUP DUP ?BRANCH [ 2 CELLS , ] DUP ;
+: PICK DUP 0= IF DROP DUP EXIT THEN SWAP >R 1- RECURSE R> SWAP ;
+: ROLL DUP 0= IF DROP EXIT THEN SWAP >R 1- RECURSE R> SWAP ;
+
+: MIN 2DUP > IF SWAP THEN DROP ;
+: MAX 2DUP < IF SWAP THEN DROP ;
+
+: BL 32 ;
+: CR 10 EMIT ;
+: SPACE BL EMIT ;
+: SPACES 0 ?DO SPACE LOOP ;
+
+: ( ; IMMEDIATE ( TODO )
+: \ ; IMMEDIATE ( TODO )
+
+: LITSTRING R> DUP CELL+ >R ; ( TODO )
+: ." [CHAR] " PARSE STATE @ IF
+       ['] LITSTRING , DUP , 0 DO DUP C@ C, 1+ LOOP DROP ['] TYPE ,
+     ELSE
+       TYPE
+     THEN ; IMMEDIATE
+
+: ENVIRONMENT? 2DROP FALSE ;
