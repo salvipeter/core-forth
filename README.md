@@ -1,6 +1,6 @@
 # Core Forth
 
-This is a 32-bit ANSI Forth implementation. It implements the *core* and
+This is a minimal ANSI Forth implementation. It implements the *core* and
 *core extension* wordsets in the [Forth 2012 Standard](https://forth-standard.org/),
 or at least its current draft.
 
@@ -9,6 +9,8 @@ It is minimal in two senses:
  - Other then the above two wordsets, there are only a handful of extra words (see below)
  
  - Aside from a few very basic words, everything is written in Forth itself
+
+Characters are assumed to be 1 byte, but cell size is easily adjustable (default is 32 bits).
 
 ## Credits
 
@@ -66,7 +68,7 @@ The virtual machine also knows some basic operations:
 
 - `@ ( a-addr -- x )`
 - `! ( x a-addr -- )`
-- `0= ( n -- flag )`
+- `0< ( n -- flag )`
 - `+ ( n1|u1 n2|u2 -- n3|u3 )`
 - `* ( n1|u1 n2|u2 -- n3|u3 )`
 - `/ ( n1|u1 n2|u2 -- n3|u3 )`
@@ -91,7 +93,7 @@ A dictionary entry has the following form:
 | K bytes | aligning (K is minimal s.t. N+K is a multiple of the cell size) |
 | M cells | body (addresses of other bodies)                                |
 
-The body of system words (i.e., one of `@ ! 0= + * / NAND EXIT KEY EMIT : ;`)
+The body of system words (i.e., one of `@ ! 0< + * / NAND EXIT KEY EMIT : ;`)
 is a single negative number (-1 for `@`, -2 for `!` etc.).
 
 ## Testing

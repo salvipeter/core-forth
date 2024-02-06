@@ -40,23 +40,27 @@
 : AND NAND INVERT ;
 : OR INVERT SWAP INVERT NAND ;
 : XOR 2DUP OR -ROT NAND AND ;
+: FALSE 0 ;
+: TRUE -1 ;
 : - NEGATE + ;
+: 0> NEGATE 0< ;
+: 0= DUP 0< SWAP 0> OR INVERT ;
 : = - 0= ;
 : <> = INVERT ;
 : 0<> 0= INVERT ;
 : < - 0< ;
 : > - 0> ;
-: FALSE 0 ;
-: TRUE -1 ;
 
+: C@ @ 255 AND ;
+: C! DUP @ 255 INVERT AND ROT + SWAP ! ;
 : LITERAL 3 CELLS @ CELL+ @ DUP CELL+ 3 CELLS @ CELL+ ! @ ;
+
 : , HERE @ ! HERE @ CELL+ HERE ! ;
-: C, HERE @ C! HERE @ CELL+ HERE ! ;
+: C, HERE @ C! HERE @ 1+ HERE ! ;
 : +! SWAP OVER @ + SWAP ! ;
 : 2! SWAP OVER ! CELL+ ! ;
 : 2@ DUP CELL+ @ SWAP @ ;
 
-: ['] 3 @ @ DUP CELL+ 3 @ ! @ ;
 : IMMEDIATE 1 CELLS @ CELL+ DUP @ 128 OR SWAP ! ;
 : [ 0 STATE ! ; IMMEDIATE
 : ] 1 STATE ! ;

@@ -76,12 +76,12 @@ int fn_set(void) {
   return TRUE;
 }
 
-int fn_eqzero(void) {
+int fn_less(void) {
   if (depth() < 1) {
     printf(" stack underflow\n");
     return FALSE;
   }
-  set(get(DSP), get(get(DSP)) == 0 ? TRUE : FALSE);
+  set(get(DSP), get(get(DSP)) < 0 ? TRUE : FALSE);
   return TRUE;
 }
 
@@ -193,7 +193,7 @@ int fn_semicolon(void) {
 
 typedef int(*sysfn)(void);
 sysfn sys_functions[] = {
-  fn_get, fn_set, fn_eqzero, fn_add, fn_mult, fn_div,
+  fn_get, fn_set, fn_less, fn_add, fn_mult, fn_div,
   fn_nand, fn_key, fn_emit, fn_colon, fn_semicolon
 };
 
@@ -323,7 +323,7 @@ int main(int argc, char **argv) {
   /* Set up system functions */
   add_dict_entry("@",    FALSE,  -1);
   add_dict_entry("!",    FALSE,  -2);
-  add_dict_entry("0=",   FALSE,  -3);
+  add_dict_entry("0<",   FALSE,  -3);
   add_dict_entry("+",    FALSE,  -4);
   add_dict_entry("*",    FALSE,  -5);
   add_dict_entry("/",    FALSE,  -6);
