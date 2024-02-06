@@ -1,45 +1,45 @@
 : CELL+ 4 + ;
 : CELLS 4 * ;
 : CHAR+ 1 + ;
-: CHARS ;
+: CHARS 1 * ;
 
-: HERE 0 ;
-: PAD 2 ;
-: >IN 5 ;
-: STATE 8 ;
-: BASE 9 ;
-: DECIMAL 10 BASE ! ;
-: HEX 16 BASE ! ;
+: HERE  0 CELLS ;
+: PAD   2 CELLS ;
+: >IN   5 CELLS ;
+: STATE 8 CELLS ;
 
-: DUP 6 @ @ ;
-: DROP DUP - + ;
-: OVER 6 @ CELL+ @ ;
+: 1+  1 + ;
+: 1- -1 + ;
+: 2*  2 * ;
+: 2/  2 / ;
+
+: DUP 6 CELLS @ CELL+ @ ;
+: OVER 6 CELLS @ 2 CELLS + @ ;
+: DROP 6 CELLS @ 2 CELLS + 6 CELLS ! ;
 : 2DUP OVER OVER ;
 : 2DROP DROP DROP ;
-: SWAP 2DUP 6 @ 3 CELLS + ! 6 @ CELL+ ! ;
+: SWAP 2DUP 6 CELLS @ 4 CELLS + ! 6 CELLS @ 2 CELLS + ! ;
 : NIP SWAP DROP ;
-: TUCK DUP ROT SWAP ;
-: R@ 3 @ CELL+ @ ;
-: >REXIT 3 @ ! ;
-: >R R@ SWAP 3 @ ! >REXIT ;
-: R> ; ( TODO )
+
+: R@ 3 CELLS @ 2 CELLS + @ ;
+: >R R@ SWAP 3 CELLS @ CELL+ ! 3 CELLS @ ! ;
+: R> 3 CELLS @ 2 CELLS + DUP @ SWAP R@ SWAP ! 3 CELLS DUP @ 2 CELLS + SWAP ! ;
+
 : ROT >R SWAP R> SWAP ;
 : -ROT ROT ROT ;
-: 2>R SWAP >R >R ;
-: 2R@ R> R> 2DUP >R >R SWAP ;
-: 2R> R> R> SWAP ;
+: TUCK DUP ROT SWAP ;
+
+: 2>R R> ROT >R SWAP >R >R ;
+: 2R@ R> R> R@ SWAP DUP >R ROT >R ;
+: 2R> R> R> R> SWAP ROT >R ;
 : 2SWAP >R -ROT R> -ROT ;
 : 2OVER 2SWAP 2>R 2R@ 2SWAP 2R> ;
 
-: 1+ 1 + ;
-: 1- 1 - ;
-: 2* 2 * ;
-: 2/ 2 / ;
 : INVERT DUP NAND ;
+: NEGATE INVERT 1+ ;
 : AND NAND INVERT ;
 : OR INVERT SWAP INVERT NAND ;
 : XOR 2DUP OR -ROT NAND AND ;
-: NEGATE INVERT 1+ ;
 : - NEGATE + ;
 : = - 0= ;
 : <> = INVERT ;
@@ -49,13 +49,15 @@
 : FALSE 0 ;
 : TRUE -1 ;
 
-: C, HERE @ C! HERE @ CELL+ HERE ! ;
+: LITERAL 3 CELLS @ CELL+ @ DUP CELL+ 3 CELLS @ CELL+ ! @ ;
 : , HERE @ ! HERE @ CELL+ HERE ! ;
+: C, HERE @ C! HERE @ CELL+ HERE ! ;
 : +! SWAP OVER @ + SWAP ! ;
 : 2! SWAP OVER ! CELL+ ! ;
 : 2@ DUP CELL+ @ SWAP @ ;
 
 : ['] 3 @ @ DUP CELL+ 3 @ ! @ ;
+: IMMEDIATE 1 CELLS @ CELL+ DUP @ 128 OR SWAP ! ;
 : [ 0 STATE ! ; IMMEDIATE
 : ] 1 STATE ! ;
 
@@ -79,6 +81,11 @@
 : ALLOT HERE @ + HERE ! ;
 : VARIABLE CREATE 0 , ;
 : CONSTANT CREATE , DOES> @ ;
+
+VARIABLE BASE
+: DECIMAL 10 BASE ! ;
+: HEX 16 BASE ! ;
+DECIMAL
 
 : ?DUP DUP ?BRANCH [ 2 CELLS , ] DUP ;
 : PICK DUP 0= IF DROP DUP EXIT THEN SWAP >R 1- RECURSE R> SWAP ;

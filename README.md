@@ -1,4 +1,4 @@
-# Minimal Forth
+# Core Forth
 
 This is a 32-bit ANSI Forth implementation. It implements the *core* and
 *core extension* wordsets in the [Forth 2012 Standard](https://forth-standard.org/),
@@ -24,11 +24,11 @@ Some words are defined based on reference implementations at the
 
 The following words are not part of the *core* and *core extension* datasets:
 
-- `NAND ( x1 x2 -- x3 )`
 - `-ROT ( x1 x2 x3 -- x3 x1 x2 )`
-- `>REXIT ( a-addr -- )`
-- `BRANCH ()`
-- `?BRANCH ()`
+- `?BRANCH ( flag -- )`
+- `BRANCH ( -- )`
+- `NAND ( x1 x2 -- x3 )`
+- `SEE ( "<spaces>name" -- )`
 <TODO>
 
 ## About the virtual machine
@@ -61,7 +61,6 @@ The first part of the memory contains the following system variables:
 | 6    | DSP     | data stack pointer                           |
 | 7    | MEMSIZE | memory size (= first invalid address)        |
 | 8    | STATE   | TRUE during compilation                      |
-| 9    | BASE    | radix base (valid values: 2-36, default: 10) |
 
 The virtual machine also knows some basic operations:
 
@@ -72,16 +71,15 @@ The virtual machine also knows some basic operations:
 - `* ( n1|u1 n2|u2 -- n3|u3 )`
 - `/ ( n1|u1 n2|u2 -- n3|u3 )`
 - `NAND ( x1 x2 -- x3 )`
-- `EXIT ( -- ) ( R: nest-sys -- )`
 - `KEY ( -- char )`
 - `EMIT ( x -- )`
+- `EXIT ( -- ) ( R: nest-sys -- )`
 
-It also has a full interpreter that can parse numbers according to
-the current radix base, and define new words with `: ... ;`.
-(This is for bootstrapping; these functionalities can be rewritten later in `core.fs`.)
+It also has a full interpreter that can parse decimal numbers, and define new words with `: ... ;`.
+(This is for bootstrapping; these functionalities are rewritten later in `core.fs`.)
 
 Note that while addition, multiplication and division could be written in Forth, 
-as well, they are incorporated in the interpreter for efficiency reasons.)
+as well, they are incorporated in the interpreter for efficiency reasons.
 
 A dictionary entry has the following form:
 

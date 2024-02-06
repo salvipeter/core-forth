@@ -26,7 +26,6 @@ ucell IN      = 5*CELL_SIZE;
 ucell DSP     = 6*CELL_SIZE;
 ucell MEMSIZE = 7*CELL_SIZE;
 ucell STATE   = 8*CELL_SIZE;
-ucell BASE    = 9*CELL_SIZE;
 
 char *memory;
 
@@ -39,7 +38,7 @@ cell get(ucell a_addr) {
 }
 
 int depth(void) {
-  return (get(MEMSIZE) - get(DSP)) / CELL_SIZE - 1;
+  return (get(MEMSIZE) - get(DSP)) / CELL_SIZE;
 }
 
 int fn_get(void) {
@@ -48,7 +47,7 @@ int fn_get(void) {
     return FALSE;
   }
   ucell index = get(get(DSP));
-  if (index >= MEMSIZE) {
+  if (index >= get(MEMSIZE)) {
     printf(" invalid memory access\n");
     return FALSE;
   }
@@ -62,11 +61,18 @@ int fn_set(void) {
     return FALSE;
   }
   ucell index = get(get(DSP)), x = get(get(DSP) + CELL_SIZE);
-  if (index >= MEMSIZE) {
+  if (index >= get(MEMSIZE)) {
     printf(" invalid memory access\n");
     return FALSE;
   }
   set(index, x);
+  if (index == DSP) {
+    if (x > get(MEMSIZE)) {
+      printf(" stack underflow");
+      return FALSE;
+    }
+  } else
+    set(DSP, get(DSP) + 2 * CELL_SIZE);
   return TRUE;
 }
 
@@ -123,11 +129,16 @@ int fn_nand(void) {
   return TRUE;
 }
 
-int fn_exit(void) {
-  return TRUE;
-}
-
 int fn_key(void) {
+  if (*(&memory[get(TIB)] + get(IN)) == '\0') {
+    if (!fgets(&memory[get(TIB)], TIB_SIZE * CELL_SIZE, stdin))
+      return FALSE;
+    set(IN, 0);
+  }
+  char c = *(&memory[get(TIB)] + get(IN));
+  set(IN, get(IN) + 1);
+  set(DSP, get(DSP) - CELL_SIZE);
+  set(get(DSP), c);
   return TRUE;
 }
 
@@ -142,18 +153,48 @@ int fn_emit(void) {
   return TRUE;
 }
 
+/* Assumes that the name is on the same line */
 int fn_colon(void) {
+  char name[32];
+  int pos;
+  if (sscanf(&memory[get(TIB)] + get(IN), "%s%n", name, &pos) != 1) {
+    return FALSE;
+  }
+  set(IN, get(IN) + pos);
+
+  ucell start = get(HERE), here = start, latest = get(LATEST);
+  int size = strlen(name);
+  set(here, latest); here += CELL_SIZE;
+  set(here, (unsigned char)size); here++;
+  memcpy(memory + here, name, size);
+  here += size;
+  if (here % CELL_SIZE != 0)
+    here += CELL_SIZE - here % CELL_SIZE;
+  set(HERE, here);
+
+  ucell ret = get(get(RSP));
+  set(get(RSP), start);
+  set(RSP, get(RSP) - CELL_SIZE);
+  set(get(RSP), ret);
+  set(STATE, 1);
   return TRUE;
 }
 
 int fn_semicolon(void) {
+  set(get(HERE), -12);
+  set(HERE, get(HERE) + CELL_SIZE);
+  set(STATE, 0);
+  ucell ret = get(get(RSP));
+  set(RSP, get(RSP) + CELL_SIZE);
+  set(LATEST, get(get(RSP)));
+  set(get(RSP), ret);
   return TRUE;
 }
 
 typedef int(*sysfn)(void);
 sysfn sys_functions[] = {
-  fn_get, fn_set, fn_eqzero, fn_add, fn_mult, fn_div, fn_nand,
-  fn_exit, fn_key, fn_emit, fn_colon, fn_semicolon
+  fn_get, fn_set, fn_eqzero, fn_add, fn_mult, fn_div,
+  fn_nand, fn_key, fn_emit, fn_colon, fn_semicolon
 };
 
 void add_dict_entry(const char *name, int immediate, int code) {
@@ -183,34 +224,59 @@ ucell find_entry(const char *word) {
 
 ucell to_body(ucell entry) {
   int len = (unsigned char)memory[entry+CELL_SIZE] & 0x1f;
-  entry += CELL_SIZE + len;
+  entry += CELL_SIZE + 1 + len;
   if (entry % CELL_SIZE != 0)
     entry += CELL_SIZE - entry % CELL_SIZE;
   return entry;
 }
 
 int eval(ucell entry) {
-  if (get(STATE)) {
+  if (get(STATE) && !(get(entry + CELL_SIZE) & 0x80)) {
     /* Compilation */
+    set(get(HERE), to_body(entry));
+    set(HERE, get(HERE) + CELL_SIZE);
   } else {
     /* Interpretation */
+    ucell old_rsp = get(RSP);
+    set(RSP, old_rsp - CELL_SIZE);
+    set(get(RSP), 0);              /* dummy return address */
     entry = to_body(entry);
-    cell index = get(entry);
-    if (index < 0) {
-      if (!sys_functions[-index-1]())
-        return FALSE;
-      else
-        return TRUE;
+    while (entry) {
+      cell index = get(entry);
+      if (index < 0) {
+        if (index == -12) {     /* EXIT */
+          entry = get(get(RSP));
+          set(RSP, get(RSP) + CELL_SIZE);
+        } else if (index == -13) { /* number literal */
+          set(DSP, get(DSP) - CELL_SIZE);
+          set(get(DSP), get(entry + CELL_SIZE));
+          entry += 2 * CELL_SIZE;
+        } else {
+          if (!sys_functions[-index-1]())
+            return FALSE;
+          entry = get(get(RSP));
+          set(RSP, get(RSP) + CELL_SIZE);
+        }
+      } else {
+        /* User word */
+        set(RSP, get(RSP) - CELL_SIZE);
+        set(get(RSP), entry + CELL_SIZE);
+        entry = index;
+#ifdef DEBUG
+        ucell c = get(LATEST);
+        while (c > index)
+          c = get(c);
+        printf("Call: %s\n", &memory[c + CELL_SIZE + 1]);
+#endif
+      }
     }
-    /* User word */
   }
   return TRUE;
 }
 
 void cleanup(void) {
-  /* TODO: traceback, stack contents etc. */
-  set(RSP,   (MEMORY_SIZE - DSTACK_SIZE - TIB_SIZE - 1) * CELL_SIZE);
-  set(DSP,   (MEMORY_SIZE - 1) * CELL_SIZE);
+  set(RSP,   (MEMORY_SIZE - DSTACK_SIZE - TIB_SIZE) * CELL_SIZE);
+  set(DSP,   MEMORY_SIZE * CELL_SIZE);
   set(STATE, FALSE);
 }
 
@@ -226,7 +292,7 @@ int parse_number(const char *str, int radix, cell *n) {
     if (*str >= '0' && *str <= '9')
       k = *str - '0';
     else if ((*str >= 'a' && *str <= 'z') || (*str >= 'A' && *str <= 'Z'))
-      k = toupper(*str) - 'A';
+      k = 10 + toupper(*str) - 'A';
     else
       return FALSE;
     if (k >= radix)
@@ -234,6 +300,8 @@ int parse_number(const char *str, int radix, cell *n) {
     *n = *n * radix + k;
     str++;
   }
+  if (sign < 0 && *n == 0)
+    return FALSE;
   *n *= sign;
   return TRUE;
 }
@@ -246,12 +314,11 @@ int main(int argc, char **argv) {
   set(HERE,    RESERVED * CELL_SIZE);
   set(LATEST,  0);
   set(PAD,     (MEMORY_SIZE - DSTACK_SIZE - TIB_SIZE - RSTACK_SIZE) * CELL_SIZE);
-  set(RSP,     (MEMORY_SIZE - DSTACK_SIZE - TIB_SIZE - 1) * CELL_SIZE);
+  set(RSP,     (MEMORY_SIZE - DSTACK_SIZE - TIB_SIZE) * CELL_SIZE);
   set(TIB,     (MEMORY_SIZE - DSTACK_SIZE - TIB_SIZE) * CELL_SIZE);
-  set(DSP,     (MEMORY_SIZE - 1) * CELL_SIZE);
+  set(DSP,     MEMORY_SIZE * CELL_SIZE);
   set(MEMSIZE, MEMORY_SIZE * CELL_SIZE);
   set(STATE,   FALSE);
-  set(BASE,    10);
 
   /* Set up system functions */
   add_dict_entry("@",    FALSE,  -1);
@@ -261,11 +328,11 @@ int main(int argc, char **argv) {
   add_dict_entry("*",    FALSE,  -5);
   add_dict_entry("/",    FALSE,  -6);
   add_dict_entry("NAND", FALSE,  -7);
-  add_dict_entry("EXIT", FALSE,  -8);
-  add_dict_entry("KEY",  FALSE,  -9);
-  add_dict_entry("EMIT", FALSE, -10);
-  add_dict_entry(":",    FALSE, -11);
-  add_dict_entry(";",    TRUE,  -12);
+  add_dict_entry("KEY",  FALSE,  -8);
+  add_dict_entry("EMIT", FALSE,  -9);
+  add_dict_entry(":",    FALSE, -10);
+  add_dict_entry(";",    TRUE,  -11);
+  add_dict_entry("EXIT", FALSE, -12);
 
   /* Interpreter loop */
   while (TRUE) {
@@ -275,16 +342,18 @@ int main(int argc, char **argv) {
     while (TRUE) {
       char word[32];
       int pos;
-      if (sscanf(&memory[get(TIB)] + get(IN), "%s%n", word, &pos) != 1) {
-        printf(" ok\n");
+      if (sscanf(&memory[get(TIB)] + get(IN), "%s%n", word, &pos) != 1)
         break;
-      }
       set(IN, get(IN) + pos);
       cell number;
-      if (parse_number(word, get(BASE), &number)) {
+      if (parse_number(word, 10, &number)) {
         /* Number */
         if (get(STATE)) {
           /* Compilation */
+          set(get(HERE), -13);
+          set(HERE, get(HERE) + CELL_SIZE);
+          set(get(HERE), number);
+          set(HERE, get(HERE) + CELL_SIZE);
         } else {
           /* Interpretation */
           set(DSP, get(DSP) - CELL_SIZE);
@@ -304,10 +373,10 @@ int main(int argc, char **argv) {
         cleanup();
         break;
       }
-      printf("Stack:");
-      for (int i = 0; i < depth(); ++i)
-        printf(" %d", get(get(DSP) + i * CELL_SIZE));
-      printf("\n");
     }
+    printf("[%d] Stack:", (get(TIB) - get(RSP)) / CELL_SIZE);
+    for (int i = depth() - 1; i >= 0; --i)
+      printf(" %d", get(get(DSP) + i * CELL_SIZE));
+    printf("\n");
   }
 }
