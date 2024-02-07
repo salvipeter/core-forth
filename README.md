@@ -26,7 +26,6 @@ Some words are defined based on reference implementations at the
 
 The following words are not part of the *core* and *core extension* datasets:
 
-- `-ROT ( x1 x2 x3 -- x3 x1 x2 )`
 - `?BRANCH ( flag -- )`
 - `BRANCH ( -- )`
 - `LIT@ ( -- x )`
