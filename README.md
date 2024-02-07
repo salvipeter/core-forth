@@ -29,7 +29,12 @@ The following words are not part of the *core* and *core extension* datasets:
 - `-ROT ( x1 x2 x3 -- x3 x1 x2 )`
 - `?BRANCH ( flag -- )`
 - `BRANCH ( -- )`
+- `LIT@ ( -- x )`
 - `NAND ( x1 x2 -- x3 )`
+<TODO>
+
+An additional file, `utils.fs` contains some utilities:
+- `.S ( -- )`
 - `SEE ( "<spaces>name" -- )`
 <TODO>
 
