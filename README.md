@@ -27,6 +27,7 @@ Some words are defined based on reference implementations at the
 
 The following words are not part of the *core* and *core extension* datasets:
 
+- `COMPARE ( c-addr1 u1 c-addr2 u2 -- n )` compares two strings (part of the *string* wordset)
 - `JUMP ( -- )` jumps to the relative address in the next cell
 - `?JUMP ( flag -- )` jumps to the relative address in the next cell when `flag` is `0`;
   otherwise jumps over the next cell

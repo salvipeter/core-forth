@@ -157,6 +157,20 @@ DECIMAL
 : ( BEGIN KEY [CHAR] ) = UNTIL ; IMMEDIATE
 : \ BEGIN KEY 10 = UNTIL ; IMMEDIATE
 
+\ Now I can add comments at last...
+: COMPARE ( c-addr1 u1 c-addr2 u2 -- n )
+  ROT 2DUP >R >R MIN ( c-addr1 c-addr2 umin ; R: u1 u2 )
+  0 ?DO 2DUP C@ SWAP C@ <>
+        IF C@ SWAP C@ > IF -1 ELSE 1 THEN UNLOOP 2R> 2DROP EXIT
+        THEN 1+ SWAP 1+ SWAP [CHAR] * EMIT
+    LOOP 2R@ < IF -1 ELSE 2R@ > IF 1 ELSE 0 THEN THEN 2R> 2DROP ;
+: FIND >R 1 CELLS @
+       BEGIN DUP CELL+ @ 31 AND R@ COUNT COMPARE WHILE @ REPEAT
+       R> DROP DUP >BODY SWAP CELL+ @ 0< IF 1 ELSE -1 THEN ;
+: ' BL WORD FIND DROP ;
+: ['] LIT@ LIT@ , ' , ; IMMEDIATE
+: EXECUTE R> DROP >R ;
+
 : LITSTRING R> DUP CELL+ >R ; ( TODO )
 : ." [CHAR] " PARSE STATE @ IF
        LIT@ LITSTRING , DUP , 0 DO DUP C@ C, 1+ LOOP DROP LIT@ TYPE ,
