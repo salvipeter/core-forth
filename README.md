@@ -82,6 +82,7 @@ It also has a full interpreter that can parse decimal numbers, and define new wo
 
 Note that while addition, multiplication and division could be written in Forth, 
 as well, they are incorporated in the interpreter for efficiency reasons.
+A naïve implementation is included in comments.
 
 A dictionary entry has the following form:
 
