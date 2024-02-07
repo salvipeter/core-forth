@@ -41,6 +41,25 @@ int depth(void) {
   return (get(MEMSIZE) - get(DSP)) / CELL_SIZE;
 }
 
+ucell find_entry(const char *word) {
+  int len = strlen(word);
+  for (ucell entry = get(LATEST); entry != 0; entry = get(entry)) {
+    if (len != ((unsigned char)memory[entry+CELL_SIZE] & 0x1f))
+      continue;
+    if (strncmp(&memory[entry+CELL_SIZE+1], word, len) == 0)
+      return entry;
+  }
+  return FALSE;
+}
+
+ucell to_body(ucell entry) {
+  int len = (unsigned char)memory[entry+CELL_SIZE] & 0x1f;
+  entry += CELL_SIZE + 1 + len;
+  if (entry % CELL_SIZE != 0)
+    entry += CELL_SIZE - entry % CELL_SIZE;
+  return entry;
+}
+
 int fn_get(void) {
   if (depth() < 1) {
     printf(" stack underflow\n");
@@ -181,7 +200,10 @@ int fn_colon(void) {
 }
 
 int fn_semicolon(void) {
-  set(get(HERE), -12);
+  static ucell exit_body = 0;
+  if (!exit_body)
+    exit_body = to_body(find_entry("EXIT"));
+  set(get(HERE), exit_body);
   set(HERE, get(HERE) + CELL_SIZE);
   set(STATE, 0);
   ucell ret = get(get(RSP));
@@ -211,25 +233,6 @@ void add_dict_entry(const char *name, int immediate, int code) {
   set(HERE, here);
 }
 
-ucell find_entry(const char *word) {
-  int len = strlen(word);
-  for (ucell entry = get(LATEST); entry != 0; entry = get(entry)) {
-    if (len != ((unsigned char)memory[entry+CELL_SIZE] & 0x1f))
-      continue;
-    if (strncmp(&memory[entry+CELL_SIZE+1], word, len) == 0)
-      return entry;
-  }
-  return FALSE;
-}
-
-ucell to_body(ucell entry) {
-  int len = (unsigned char)memory[entry+CELL_SIZE] & 0x1f;
-  entry += CELL_SIZE + 1 + len;
-  if (entry % CELL_SIZE != 0)
-    entry += CELL_SIZE - entry % CELL_SIZE;
-  return entry;
-}
-
 int eval(ucell entry) {
   if (get(STATE) && !(get(entry + CELL_SIZE) & 0x80)) {
     /* Compilation */
@@ -245,8 +248,8 @@ int eval(ucell entry) {
       cell index = get(entry);
       if (index < 0) {
         if (index == -12) {     /* EXIT */
-          entry = get(get(RSP));
-          set(RSP, get(RSP) + CELL_SIZE);
+          entry = get(get(RSP) + CELL_SIZE);
+          set(RSP, get(RSP) + 2 * CELL_SIZE);
         } else if (index == -13) { /* number literal */
           set(DSP, get(DSP) - CELL_SIZE);
           set(get(DSP), get(entry + CELL_SIZE));
