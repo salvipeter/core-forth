@@ -26,13 +26,16 @@ Some words are defined based on reference implementations at the
 
 The following words are not part of the *core* and *core extension* datasets:
 
-- `?BRANCH ( flag -- )`
-- `BRANCH ( -- )`
-- `LIT@ ( -- x )`
-- `NAND ( x1 x2 -- x3 )`
+- `JUMP ( -- )` jumps to the relative address in the next cell
+- `?JUMP ( flag -- )` jumps to the relative address in the next cell when `flag` is `0`;
+  otherwise jumps over the next cell
+- `JUMP! ( offset -- )` compiles the computation and storing of the current relative address
+  plus the given offset (storage address is given on the data stack in runtime)
+- `LIT@ ( -- x )` loads the next cell onto the data stack and jumps over it
+- `NAND ( x1 x2 -- x3 )` is the bitwise NAND operation
 <TODO>
 
-An additional file, `utils.fs` contains some utilities:
+An additional file, `utils.fs` contains some standard utilities (from the *tools* wordset):
 - `.S ( -- )`
 - `SEE ( "<spaces>name" -- )`
 <TODO>
