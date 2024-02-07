@@ -47,12 +47,13 @@ The machine memory has the following structure:
 
 ```
 <- low addresses . . . . . . high addresses ->
-VVVVVMMMMMMMMMMMMMMMMMMMMMMMMMPPPRRRRRTTDDDDDD
+VVVVVMMMMMMMMMMMMMMMMMMMMMMSSSPPPRRRRRTTDDDDDD
      M->                           <-R     <-D
 
 V: system variables
 M: main memory (where the user dictionary lives)
-P: pad (temporary storage for strings etc.)
+S: scratch (temporary storage for strings etc.)
+P: pad (like scratch, but for the user)
 R: return stack (grows downward)
 T: text input buffer (stores the current line)
 D: data stack (grows downward)
@@ -64,14 +65,15 @@ The first part of the memory contains the following system variables:
 |------|---------|--------------------------------------------|
 | 0    | HERE    | start of unreserved data space             |
 | 1    | DICT    | address of top of the dictionary           |
-| 2    | PAD     | pad address                                |
-| 3    | RSP     | return stack pointer                       |
-| 4    | TIB     | text input buffer address                  |
-| 5    | >IN     | input buffer offset                        |
-| 6    | DSP     | data stack pointer                         |
-| 7    | MEMSIZE | memory size (= first invalid address)      |
-| 8    | STATE   | TRUE during compilation                    |
-| 9    | LATEST  | address of the latest (started) definition |
+| 2    | SCRATCH | scratch address                            |
+| 3    | PAD     | pad address                                |
+| 4    | RSP     | return stack pointer                       |
+| 5    | TIB     | text input buffer address                  |
+| 6    | >IN     | input buffer offset                        |
+| 7    | DSP     | data stack pointer                         |
+| 8    | MEMSIZE | memory size (= first invalid address)      |
+| 9    | STATE   | TRUE during compilation                    |
+| 10   | LATEST  | address of the latest (started) definition |
 
 The virtual machine also knows some basic operations:
 

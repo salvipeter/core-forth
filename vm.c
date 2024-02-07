@@ -8,25 +8,27 @@
 #define ucell uint32_t
 #define CELL_SIZE 4
 #define MEMORY_SIZE 100000
-#define RESERVED 10
-#define PAD_SIZE 100
+#define RESERVED 11
+#define PAD_SIZE 50
 #define RSTACK_SIZE 100
-#define TIB_SIZE 100
+#define TIB_SIZE 50
 #define DSTACK_SIZE 100
+#define SCRATCH_SIZE 50
 
 #define TRUE -1
 #define FALSE 0
 
-ucell HERE    = 0*CELL_SIZE;
-ucell DICT    = 1*CELL_SIZE;
-ucell PAD     = 2*CELL_SIZE;
-ucell RSP     = 3*CELL_SIZE;
-ucell TIB     = 4*CELL_SIZE;
-ucell IN      = 5*CELL_SIZE;
-ucell DSP     = 6*CELL_SIZE;
-ucell MEMSIZE = 7*CELL_SIZE;
-ucell STATE   = 8*CELL_SIZE;
-ucell LATEST  = 9*CELL_SIZE;
+ucell HERE    =  0*CELL_SIZE;
+ucell DICT    =  1*CELL_SIZE;
+ucell SCRATCH =  2*CELL_SIZE;
+ucell PAD     =  3*CELL_SIZE;
+ucell RSP     =  4*CELL_SIZE;
+ucell TIB     =  5*CELL_SIZE;
+ucell IN      =  6*CELL_SIZE;
+ucell DSP     =  7*CELL_SIZE;
+ucell MEMSIZE =  8*CELL_SIZE;
+ucell STATE   =  9*CELL_SIZE;
+ucell LATEST  = 10*CELL_SIZE;
 
 char *memory;
 
@@ -311,6 +313,7 @@ int main(int argc, char **argv) {
   /* Set up system variables */
   set(HERE,    RESERVED * CELL_SIZE);
   set(DICT,    0);
+  set(SCRATCH, (MEMORY_SIZE - DSTACK_SIZE - TIB_SIZE - RSTACK_SIZE - SCRATCH_SIZE) * CELL_SIZE);
   set(PAD,     (MEMORY_SIZE - DSTACK_SIZE - TIB_SIZE - RSTACK_SIZE) * CELL_SIZE);
   set(RSP,     (MEMORY_SIZE - DSTACK_SIZE - TIB_SIZE) * CELL_SIZE);
   set(TIB,     (MEMORY_SIZE - DSTACK_SIZE - TIB_SIZE) * CELL_SIZE);
