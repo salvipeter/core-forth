@@ -11,6 +11,7 @@ It is minimal in two senses:
  - Aside from a few very basic words, everything is written in Forth itself
 
 Characters are assumed to be 1 byte, but cell size is easily adjustable (default is 32 bits).
+The system is assumed to be little-endian.
 
 ## Credits
 
@@ -59,17 +60,18 @@ D: data stack (grows downward)
 
 The first part of the memory contains the following system variables:
 
-| Cell | Name    | Meaning                                      |
-|------|---------|----------------------------------------------|
-| 0    | HERE    | start of unreserved data space               |
-| 1    | LATEST  | index of latest dictionary entry             |
-| 2    | PAD     | pad address                                  |
-| 3    | RSP     | return stack pointer                         |
-| 4    | TIB     | text input buffer address                    |
-| 5    | >IN     | input buffer offset                          |
-| 6    | DSP     | data stack pointer                           |
-| 7    | MEMSIZE | memory size (= first invalid address)        |
-| 8    | STATE   | TRUE during compilation                      |
+| Cell | Name    | Meaning                                    |
+|------|---------|--------------------------------------------|
+| 0    | HERE    | start of unreserved data space             |
+| 1    | DICT    | address of top of the dictionary           |
+| 2    | PAD     | pad address                                |
+| 3    | RSP     | return stack pointer                       |
+| 4    | TIB     | text input buffer address                  |
+| 5    | >IN     | input buffer offset                        |
+| 6    | DSP     | data stack pointer                         |
+| 7    | MEMSIZE | memory size (= first invalid address)      |
+| 8    | STATE   | TRUE during compilation                    |
+| 9    | LATEST  | address of the latest (started) definition |
 
 The virtual machine also knows some basic operations:
 

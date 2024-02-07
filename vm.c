@@ -18,7 +18,7 @@
 #define FALSE 0
 
 ucell HERE    = 0*CELL_SIZE;
-ucell LATEST  = 1*CELL_SIZE;
+ucell DICT    = 1*CELL_SIZE;
 ucell PAD     = 2*CELL_SIZE;
 ucell RSP     = 3*CELL_SIZE;
 ucell TIB     = 4*CELL_SIZE;
@@ -26,6 +26,7 @@ ucell IN      = 5*CELL_SIZE;
 ucell DSP     = 6*CELL_SIZE;
 ucell MEMSIZE = 7*CELL_SIZE;
 ucell STATE   = 8*CELL_SIZE;
+ucell LATEST  = 9*CELL_SIZE;
 
 char *memory;
 
@@ -43,7 +44,7 @@ int depth(void) {
 
 ucell find_entry(const char *word) {
   int len = strlen(word);
-  for (ucell entry = get(LATEST); entry != 0; entry = get(entry)) {
+  for (ucell entry = get(DICT); entry != 0; entry = get(entry)) {
     if (len != ((unsigned char)memory[entry+CELL_SIZE] & 0x1f))
       continue;
     if (strncmp(&memory[entry+CELL_SIZE+1], word, len) == 0)
@@ -181,9 +182,9 @@ int fn_colon(void) {
   }
   set(IN, get(IN) + pos);
 
-  ucell start = get(HERE), here = start, latest = get(LATEST);
+  ucell start = get(HERE), here = start, dict = get(DICT);
   int size = strlen(name);
-  set(here, latest); here += CELL_SIZE;
+  set(here, dict); here += CELL_SIZE;
   set(here, (unsigned char)size); here++;
   memcpy(memory + here, name, size);
   here += size;
@@ -191,10 +192,7 @@ int fn_colon(void) {
     here += CELL_SIZE - here % CELL_SIZE;
   set(HERE, here);
 
-  ucell ret = get(get(RSP));
-  set(get(RSP), start);
-  set(RSP, get(RSP) - CELL_SIZE);
-  set(get(RSP), ret);
+  set(LATEST, start);
   set(STATE, 1);
   return TRUE;
 }
@@ -206,10 +204,7 @@ int fn_semicolon(void) {
   set(get(HERE), exit_body);
   set(HERE, get(HERE) + CELL_SIZE);
   set(STATE, 0);
-  ucell ret = get(get(RSP));
-  set(RSP, get(RSP) + CELL_SIZE);
-  set(LATEST, get(get(RSP)));
-  set(get(RSP), ret);
+  set(DICT, get(LATEST));
   return TRUE;
 }
 
@@ -220,10 +215,10 @@ sysfn sys_functions[] = {
 };
 
 void add_dict_entry(const char *name, int immediate, int code) {
-  ucell here = get(HERE), latest = get(LATEST);
+  ucell here = get(HERE), dict = get(DICT);
   int size = strlen(name);
-  set(LATEST, here);
-  set(here, latest); here += CELL_SIZE;
+  set(DICT, here);
+  set(here, dict); here += CELL_SIZE;
   set(here, (unsigned char)size + (immediate ? 0x80 : 0)); here++;
   memcpy(memory + here, name, size);
   here += size;
@@ -266,7 +261,7 @@ int eval(ucell entry) {
         set(get(RSP), entry + CELL_SIZE);
         entry = index;
 #ifdef DEBUG
-        ucell c = get(LATEST);
+        ucell c = get(DICT);
         while (c > index)
           c = get(c);
         printf("Call: %s\n", &memory[c + CELL_SIZE + 1]);
@@ -315,7 +310,7 @@ int main(int argc, char **argv) {
 
   /* Set up system variables */
   set(HERE,    RESERVED * CELL_SIZE);
-  set(LATEST,  0);
+  set(DICT,    0);
   set(PAD,     (MEMORY_SIZE - DSTACK_SIZE - TIB_SIZE - RSTACK_SIZE) * CELL_SIZE);
   set(RSP,     (MEMORY_SIZE - DSTACK_SIZE - TIB_SIZE) * CELL_SIZE);
   set(TIB,     (MEMORY_SIZE - DSTACK_SIZE - TIB_SIZE) * CELL_SIZE);
