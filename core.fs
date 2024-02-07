@@ -101,7 +101,11 @@
 : ENDOF LIT@ JUMP , HERE @ 0 , SWAP [ 0 JUMP! ] SWAP 1+ ; IMMEDIATE
 : ENDCASE LIT@ DROP , 0 ?DO [ 0 JUMP! ] LOOP ; IMMEDIATE
 
+: ABS DUP 0< IF NEGATE THEN ;
+: MIN 2DUP > IF SWAP THEN DROP ;
+: MAX 2DUP < IF SWAP THEN DROP ;
 : MOD 2DUP / * - ;
+: S>D 0 ;
 
 : ALIGNED DUP 1 CELLS MOD DUP IF - CELL+ ELSE DROP THEN ;
 : ALIGN HERE @ ALIGNED HERE ! ;
@@ -113,8 +117,22 @@
 : PICK DUP 0= IF DROP DUP EXIT THEN SWAP >R 1- RECURSE R> SWAP ;
 : ROLL DUP 0= IF DROP EXIT THEN SWAP >R 1- RECURSE R> SWAP ;
 
-: CREATE : LIT@ LIT@ , HERE @ 2 CELLS + , LIT@ EXIT , REVEAL 0 STATE !
 : ALLOT HERE @ + HERE ! ;
+: FILL SWAP >R SWAP R> 0 ?DO 2DUP C! 1+ LOOP 2DROP ;
+: MOVE 0 ?DO 2DUP SWAP @ SWAP C! SWAP 1+ SWAP 1+ LOOP 2DROP ;
+: ERASE 0 FILL ;
+: UNUSED 2 CELLS @ HERE @ - ;
+
+: CREATE : LIT@ LIT@ , HERE @ 2 CELLS + ,
+         LIT@ EXIT , 9 CELLS @ 1 CELLS ! 0 STATE ! ;
+: DOES> LIT@ LIT@ ,           1 ,  LIT@ CELLS ,  LIT@     @ ,  LIT@ >BODY ,
+        LIT@ LIT@ ,  LIT@  JUMP ,  LIT@  OVER ,  LIT@     ! ,  LIT@ CELL+ ,
+        LIT@ HERE ,  LIT@     @ ,  LIT@  OVER ,  LIT@     - ,  LIT@  OVER ,
+        LIT@    ! ,  LIT@  LIT@ ,           2 ,  LIT@ CELLS ,  LIT@     + ,
+        LIT@ LIT@ ,  LIT@  LIT@ ,  LIT@     , ,  LIT@     , ,  LIT@  LIT@ ,
+        LIT@ JUMP ,  LIT@     , ,  LIT@  LIT@ ,      HERE @ 6 CELLS + ,
+        LIT@ HERE ,  LIT@     @ ,  LIT@     - ,  LIT@     , ,  LIT@  EXIT ,
+        ; IMMEDIATE
 : VARIABLE CREATE 0 , ;
 : CONSTANT CREATE , DOES> @ ;
 
@@ -123,9 +141,6 @@ VARIABLE BASE
 : HEX 16 BASE ! ;
 DECIMAL
 
-: MIN 2DUP > IF SWAP THEN DROP ;
-: MAX 2DUP < IF SWAP THEN DROP ;
-
 : BL 32 ;
 : CR 10 EMIT ;
 : SPACE BL EMIT ;
@@ -133,6 +148,8 @@ DECIMAL
 
 : ( ; IMMEDIATE ( TODO )
 : \ ; IMMEDIATE ( TODO )
+
+: BUFFER: ;
 
 : LITSTRING R> DUP CELL+ >R ; ( TODO )
 : ." [CHAR] " PARSE STATE @ IF

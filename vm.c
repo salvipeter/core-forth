@@ -203,8 +203,8 @@ int fn_semicolon(void) {
     exit_body = to_body(find_entry("EXIT"));
   set(get(HERE), exit_body);
   set(HERE, get(HERE) + CELL_SIZE);
-  set(STATE, 0);
   set(DICT, get(LATEST));
+  set(STATE, 0);
   return TRUE;
 }
 
