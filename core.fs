@@ -3,8 +3,8 @@
 : CHAR+ 1 + ;
 : CHARS ;
 
-: HERE  0 CELLS ;
-: PAD   3 CELLS ;
+: HERE  0 CELLS @ ;
+: PAD   3 CELLS @ ;
 : >IN   6 CELLS ;
 : STATE 9 CELLS ;
 
@@ -54,8 +54,9 @@
 : C@ @ 255 AND ;
 : C! DUP @ 255 INVERT AND ROT + SWAP ! ;
 
-: , HERE @ ! HERE @ CELL+ HERE ! ;
-: C, HERE @ C! HERE @ 1+ HERE ! ;
+: ALLOT HERE + 0 ! ;
+: , HERE ! HERE CELL+ 0 ! ;
+: C, HERE C! HERE 1+ 0 ! ;
 : +! SWAP OVER @ + SWAP ! ;
 : 2! SWAP OVER ! CELL+ ! ;
 : 2@ DUP CELL+ @ SWAP @ ;
@@ -69,36 +70,36 @@
 
 : JUMP R> DUP @ + >R ;
 : ?JUMP 0= R@ @ -1 CELLS + AND R> + CELL+ >R ;
-: JUMP! LIT@ DUP , LIT@ HERE , LIT@ @ , LIT@ SWAP , LIT@ - ,
+: JUMP! LIT@ DUP , LIT@ HERE , LIT@ SWAP , LIT@ - ,
         LIT@ LIT@ , , LIT@ + , LIT@ SWAP , LIT@ ! , ;
-: IF LIT@ ?JUMP , HERE @ 0 , ; IMMEDIATE
-: ELSE LIT@ JUMP , HERE @ 0 , SWAP [ 0 JUMP! ] ; IMMEDIATE
+: IF LIT@ ?JUMP , HERE 0 , ; IMMEDIATE
+: ELSE LIT@ JUMP , HERE 0 , SWAP [ 0 JUMP! ] ; IMMEDIATE
 : THEN [ 0 JUMP! ] ; IMMEDIATE
 
-: BEGIN HERE @ ; IMMEDIATE
-: AGAIN LIT@ JUMP , HERE @ - , ; IMMEDIATE
-: UNTIL LIT@ ?JUMP , HERE @ - , ; IMMEDIATE
-: WHILE LIT@ ?JUMP , HERE @ 0 , SWAP ; IMMEDIATE
-: REPEAT LIT@ JUMP , HERE @ - , [ 0 JUMP! ] ; IMMEDIATE
+: BEGIN HERE ; IMMEDIATE
+: AGAIN LIT@ JUMP , HERE - , ; IMMEDIATE
+: UNTIL LIT@ ?JUMP , HERE - , ; IMMEDIATE
+: WHILE LIT@ ?JUMP , HERE 0 , SWAP ; IMMEDIATE
+: REPEAT LIT@ JUMP , HERE - , [ 0 JUMP! ] ; IMMEDIATE
 
-: DO HERE @ LIT@ >R , LIT@ >R , R> 0 >R >R ; IMMEDIATE
-: ?DO HERE @ LIT@ 2DUP , LIT@ = , LIT@ ?JUMP , 4 CELLS , LIT@ 2DROP ,
-      LIT@ JUMP , R> HERE @ 0 , LIT@ >R , LIT@ >R , >R 1 >R >R ; IMMEDIATE
+: DO HERE LIT@ >R , LIT@ >R , R> 0 >R >R ; IMMEDIATE
+: ?DO HERE LIT@ 2DUP , LIT@ = , LIT@ ?JUMP , 4 CELLS , LIT@ 2DROP ,
+      LIT@ JUMP , R> HERE 0 , LIT@ >R , LIT@ >R , >R 1 >R >R ; IMMEDIATE
 : UNLOOP R> R> R> 2DROP >R ;
-: LEAVE LIT@ UNLOOP , LIT@ JUMP , R> R> 1+ HERE @ 0 , >R >R >R ; IMMEDIATE
+: LEAVE LIT@ UNLOOP , LIT@ JUMP , R> R> 1+ HERE 0 , >R >R >R ; IMMEDIATE
 : LOOP R> R> BEGIN DUP 0<> WHILE 1- R> [ 8 CELLS JUMP! ] REPEAT
        DROP >R LIT@ R> , LIT@ R> , LIT@ 1+ , LIT@ 2DUP , LIT@ = ,
-       LIT@ ?JUMP , HERE @ - , LIT@ 2DROP , ; IMMEDIATE
+       LIT@ ?JUMP , HERE - , LIT@ 2DROP , ; IMMEDIATE
 : +LOOP R> R> BEGIN DUP 0<> WHILE 1- R> [ 10 CELLS JUMP! ] REPEAT
         DROP >R LIT@ R> , LIT@ R> ,
         LIT@ ROT , LIT@ + , LIT@ 2DUP , LIT@ > , LIT@ INVERT ,
-        LIT@ ?JUMP , HERE @ - , LIT@ 2DROP , ; IMMEDIATE
+        LIT@ ?JUMP , HERE - , LIT@ 2DROP , ; IMMEDIATE
 : I R> R> R@ SWAP >R SWAP >R ;
 : J R> R> R> R> R@ SWAP >R SWAP >R SWAP >R SWAP >R ;
 
 : CASE 0 ; IMMEDIATE
-: OF LIT@ OVER , LIT@ = , LIT@ ?JUMP , HERE @ 0 , LIT@ DROP , ; IMMEDIATE
-: ENDOF LIT@ JUMP , HERE @ 0 , SWAP [ 0 JUMP! ] SWAP 1+ ; IMMEDIATE
+: OF LIT@ OVER , LIT@ = , LIT@ ?JUMP , HERE 0 , LIT@ DROP , ; IMMEDIATE
+: ENDOF LIT@ JUMP , HERE 0 , SWAP [ 0 JUMP! ] SWAP 1+ ; IMMEDIATE
 : ENDCASE LIT@ DROP , 0 ?DO [ 0 JUMP! ] LOOP ; IMMEDIATE
 
 : ABS DUP 0< IF NEGATE THEN ;
@@ -108,7 +109,7 @@
 : S>D 0 ;
 
 : ALIGNED DUP 1 CELLS MOD DUP IF - CELL+ ELSE DROP THEN ;
-: ALIGN HERE @ ALIGNED HERE ! ;
+: ALIGN HERE DUP ALIGNED - ALLOT ;
 : >BODY CELL+ DUP @ 31 AND + 1+ ALIGNED ;
 : RECURSE 10 CELLS @ >BODY , ; IMMEDIATE
 
@@ -117,22 +118,20 @@
 : PICK DUP 0= IF DROP DUP EXIT THEN SWAP >R 1- RECURSE R> SWAP ;
 : ROLL DUP 0= IF DROP EXIT THEN SWAP >R 1- RECURSE R> SWAP ;
 
-: ALLOT HERE @ + HERE ! ;
 : FILL SWAP >R SWAP R> 0 ?DO 2DUP C! 1+ LOOP 2DROP ;
 : MOVE 0 ?DO 2DUP SWAP @ SWAP C! SWAP 1+ SWAP 1+ LOOP 2DROP ;
 : ERASE 0 FILL ;
-: UNUSED 2 CELLS @ HERE @ - ;
+: UNUSED 2 CELLS @ HERE - ;
 
-: CREATE : LIT@ LIT@ , HERE @ 2 CELLS + ,
+: CREATE : LIT@ LIT@ , HERE 2 CELLS + ,
          LIT@ EXIT , 10 CELLS @ 1 CELLS ! 0 STATE ! ;
 : DOES> LIT@ LIT@ ,           1 ,  LIT@ CELLS ,  LIT@     @ ,  LIT@ >BODY ,
         LIT@ LIT@ ,  LIT@  JUMP ,  LIT@  OVER ,  LIT@     ! ,  LIT@ CELL+ ,
-        LIT@ HERE ,  LIT@     @ ,  LIT@  OVER ,  LIT@     - ,  LIT@  OVER ,
-        LIT@    ! ,  LIT@  LIT@ ,           2 ,  LIT@ CELLS ,  LIT@     + ,
-        LIT@ LIT@ ,  LIT@  LIT@ ,  LIT@     , ,  LIT@     , ,  LIT@  LIT@ ,
-        LIT@ JUMP ,  LIT@     , ,  LIT@  LIT@ ,      HERE @ 6 CELLS + ,
-        LIT@ HERE ,  LIT@     @ ,  LIT@     - ,  LIT@     , ,  LIT@  EXIT ,
-        ; IMMEDIATE
+        LIT@ HERE ,  LIT@  OVER ,  LIT@     - ,  LIT@  OVER ,  LIT@     ! ,
+        LIT@ LIT@ ,           2 ,  LIT@ CELLS ,  LIT@     + ,  LIT@  LIT@ ,
+        LIT@ LIT@ ,  LIT@     , ,  LIT@     , ,  LIT@  LIT@ ,  LIT@  JUMP ,
+        LIT@    , ,  LIT@  LIT@ ,       HERE 6 CELLS + ,       LIT@  HERE ,
+        LIT@    - ,  LIT@     , ,  LIT@  EXIT , ; IMMEDIATE
 : VARIABLE CREATE 0 , ;
 : CONSTANT CREATE , DOES> @ ;
 : BUFFER: CREATE ALLOT ;
@@ -173,13 +172,17 @@ DECIMAL
 : ' BL WORD FIND DROP ;
 : ['] LIT@ LIT@ , ' , ; IMMEDIATE
 : EXECUTE >R ;
-: POSTPONE ' , ; IMMEDIATE
 : [COMPILE] ' , ; IMMEDIATE
+: POSTPONE BL WORD FIND 1 = IF , ELSE LIT@ LIT@ , , LIT@ , , THEN ; IMMEDIATE
 
-: ." [CHAR] " PARSE STATE @ IF
-       LIT@ LITSTRING , DUP , 0 DO DUP C@ C, 1+ LOOP DROP LIT@ TYPE ,
-     ELSE
-       TYPE
-     THEN ; IMMEDIATE
+: PARSE >R >IN @ \ offset ; R: char
+        BEGIN KEY DUP R@ = SWAP 10 = OR UNTIL
+        R> DROP DUP 5 CELLS @ + SWAP >IN @ SWAP - 1- ;
+: S" [CHAR] " PARSE                        \ c-addr u
+     POSTPONE JUMP DUP ALIGNED DUP CELL+ , \ c-addr u offset
+     >R >R HERE R@ MOVE R> R>              \ u offset
+     DUP ALLOT HERE SWAP - POSTPONE LITERAL POSTPONE LITERAL ; IMMEDIATE
+: ." POSTPONE S" POSTPONE TYPE ; IMMEDIATE
+: .( [CHAR] ) PARSE TYPE ; IMMEDIATE
 
 : ENVIRONMENT? 2DROP FALSE ;
