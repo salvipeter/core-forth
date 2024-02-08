@@ -28,6 +28,7 @@ Some words are defined based on reference implementations at the
 The following words are not part of the *core* and *core extension* datasets:
 
 - `COMPARE ( c-addr1 u1 c-addr2 u2 -- n )` compares two strings (part of the *string* wordset)
+- `HIGHBIT ( -- n )` returns the highest bit in the current cell size (i.e., 2^(n-1))
 - `JUMP ( -- )` jumps to the relative address in the next cell
 - `?JUMP ( flag -- )` jumps to the relative address in the next cell when `flag` is `0`;
   otherwise jumps over the next cell
@@ -37,7 +38,7 @@ The following words are not part of the *core* and *core extension* datasets:
 - `NAND ( x1 x2 -- x3 )` is the bitwise NAND operation
 <TODO>
 
-An additional file, `utils.fs` contains some standard utilities (from the *tools* wordset):
+An additional file (`utils.fs`) contains some standard utilities from the *tools* wordset:
 - `.S ( -- )`
 - `SEE ( "<spaces>name" -- )`
 <TODO>

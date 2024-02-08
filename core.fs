@@ -128,7 +128,7 @@
         LIT@ HERE ,  LIT@  OVER ,  LIT@     - ,  LIT@  OVER ,  LIT@     ! ,
         LIT@ LIT@ ,           2 ,  LIT@ CELLS ,  LIT@     + ,  LIT@  LIT@ ,
         LIT@ LIT@ ,  LIT@     , ,  LIT@     , ,  LIT@  LIT@ ,  LIT@  JUMP ,
-        LIT@    , ,  LIT@  LIT@ ,       HERE 6 CELLS + ,       LIT@  HERE ,
+        LIT@    , ,  LIT@  LIT@ ,       HERE 5 CELLS + ,       LIT@  HERE ,
         LIT@    - ,  LIT@     , ,  LIT@  EXIT , ; IMMEDIATE
 : VARIABLE CREATE 0 , ;
 : CONSTANT CREATE , DOES> @ ;
@@ -201,7 +201,8 @@ DECIMAL
 : 2* 2 * ;
 : 2/ DUP 0< IF 1- THEN 2 / ; \ signed right shift
 : LSHIFT 0 ?DO 2* LOOP ;
-: RSHIFT 0 ?DO ( ... ) LOOP ;
+1 8 CELLS 1- LSHIFT CONSTANT HIGHBIT
+: RSHIFT 0 ?DO 2/ HIGHBIT INVERT AND LOOP ;
 : /MOD 2DUP / SWAP OVER * ROT SWAP - SWAP ;
 : FM/MOD ;
 : SM/REM ;
@@ -210,10 +211,14 @@ DECIMAL
 : M* ;
 : */MOD >R M* R> FM/MOD ;
 : */ */MOD NIP ;
-: U< ;
-: U> ;
+: U< 2DUP 0< SWAP 0< XOR IF DROP 0> ELSE < THEN ;
+: U> SWAP U< ;
 : UM* ;
 : UM/MOD ;
+
+\ Just for fun: multiplication and division
+\ : * ;
+\ : / ;
 
 \ TODO - should this use UM* ?
 : >NUMBER ( ud1 c-addr1 u1 -- ud2 c-addr2 u2 )
@@ -263,8 +268,11 @@ DECIMAL
 : #S ;
 : #> ;
 : HOLD ;
+: HOLDS ;
 : SIGN 0< IF [CHAR] - HOLD THEN ;
-: . <# DUP SIGN ABS #S #> TYPE ;
-: U. <# #S #> TYPE ;
+: . DUP S>D <# #S ROT SIGN #> TYPE ;
+: U. S>D <# #S #> TYPE ;
+: .R ;
+: U.R ;
 
 : ENVIRONMENT? 2DROP FALSE ;
