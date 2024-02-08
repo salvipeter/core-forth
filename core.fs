@@ -60,12 +60,12 @@
 : 2! SWAP OVER ! CELL+ ! ;
 : 2@ DUP CELL+ @ SWAP @ ;
 
-: COMPILE, , ;
-: LIT@ R> DUP CELL+ >R @ ;
-
 : IMMEDIATE 1 CELLS @ CELL+ DUP @ 128 OR SWAP ! ;
 : [ 0 STATE ! ; IMMEDIATE
 : ] 1 STATE ! ;
+: COMPILE, , ;
+: LIT@ R> DUP CELL+ >R @ ;
+: LITERAL LIT@ LIT@ , , ; IMMEDIATE
 
 : JUMP R> DUP @ + >R ;
 : ?JUMP 0= R@ @ -1 CELLS + AND R> + CELL+ >R ;
@@ -150,28 +150,32 @@ DECIMAL
 : COUNT DUP C@ SWAP 1+ SWAP ;
 : WORD >R 2 CELLS @ DUP 1+
        BEGIN KEY DUP R@ = WHILE DROP REPEAT OVER C! 1+
-       BEGIN KEY DUP R@ <> WHILE OVER C! 1+ REPEAT DROP
+       BEGIN KEY DUP R@ <> OVER 10 <> AND WHILE OVER C! 1+ REPEAT DROP
        OVER - 1- OVER C! R> DROP ;
 : CHAR BL WORD 1+ C@ ;
 : [CHAR] LIT@ LIT@ , CHAR , ; IMMEDIATE
 : ( BEGIN KEY [CHAR] ) = UNTIL ; IMMEDIATE
 : \ BEGIN KEY 10 = UNTIL ; IMMEDIATE
 
-\ Now I can add comments at last...
 : COMPARE ( c-addr1 u1 c-addr2 u2 -- n )
-  ROT 2DUP >R >R MIN ( c-addr1 c-addr2 umin ; R: u1 u2 )
-  0 ?DO 2DUP C@ SWAP C@ <>
-        IF C@ SWAP C@ > IF -1 ELSE 1 THEN UNLOOP 2R> 2DROP EXIT
-        THEN 1+ SWAP 1+ SWAP [CHAR] * EMIT
-    LOOP 2R@ < IF -1 ELSE 2R@ > IF 1 ELSE 0 THEN THEN 2R> 2DROP ;
-: FIND >R 1 CELLS @
-       BEGIN DUP CELL+ @ 31 AND R@ COUNT COMPARE WHILE @ REPEAT
-       R> DROP DUP >BODY SWAP CELL+ @ 0< IF 1 ELSE -1 THEN ;
+  ROT 2DUP >R >R MIN       \ c-addr1 c-addr2 umin ; R: u1 u2
+  0 ?DO 2DUP C@ SWAP C@ <> \ c-addr1 c-addr2 flag ; R: u1 u2
+        IF C@ SWAP C@ > IF -1 ELSE 1 THEN UNLOOP 2R> 2DROP EXIT THEN
+        1+ SWAP 1+ SWAP
+    LOOP 2DROP 2R>         \ u1 u2
+  2DUP < IF -1 ELSE 2DUP > IF 1 ELSE 0 THEN THEN >R 2DROP R> ;
+: FIND >R 1 CELLS @ \ a-addr ; R: c-addr
+       BEGIN
+         DUP 0= IF R> SWAP EXIT THEN
+         DUP CELL+ DUP 1+ SWAP C@ 31 AND R@ COUNT COMPARE WHILE @
+       REPEAT
+       R> DROP DUP >BODY SWAP CELL+ C@ 128 AND 0= IF -1 ELSE 1 THEN ;
 : ' BL WORD FIND DROP ;
 : ['] LIT@ LIT@ , ' , ; IMMEDIATE
-: EXECUTE R> DROP >R ;
+: EXECUTE >R ;
+: POSTPONE ' , ; IMMEDIATE
+: [COMPILE] ' , ; IMMEDIATE
 
-: LITSTRING R> DUP CELL+ >R ; ( TODO )
 : ." [CHAR] " PARSE STATE @ IF
        LIT@ LITSTRING , DUP , 0 DO DUP C@ C, 1+ LOOP DROP LIT@ TYPE ,
      ELSE
