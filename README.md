@@ -11,7 +11,7 @@ It is minimal in two senses:
  - Aside from a few very basic words, everything is written in Forth itself
 
 Characters are assumed to be 1 byte, but cell size is easily adjustable (default is 32 bits).
-The system is assumed to be little-endian.
+The system is assumed to be little-endian, and endline character is 10 (line feed).
 
 ## Credits
 

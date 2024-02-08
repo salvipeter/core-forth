@@ -10,8 +10,6 @@
 
 : 1+  1 + ;
 : 1- -1 + ;
-: 2*  2 * ;
-: 2/  2 / ;
 
 : DUP 7 CELLS @ CELL+ @ ;
 : OVER 7 CELLS @ 2 CELLS + @ ;
@@ -106,7 +104,7 @@
 : MIN 2DUP > IF SWAP THEN DROP ;
 : MAX 2DUP < IF SWAP THEN DROP ;
 : MOD 2DUP / * - ;
-: S>D 0 ;
+: S>D DUP 0< IF -1 ELSE 0 THEN ;
 
 : ALIGNED DUP 1 CELLS MOD DUP IF - CELL+ ELSE DROP THEN ;
 : ALIGN HERE DUP ALIGNED SWAP - ALLOT ;
@@ -175,27 +173,60 @@ DECIMAL
 : [COMPILE] ' , ; IMMEDIATE
 : POSTPONE BL WORD FIND 1 = IF , ELSE LIT@ LIT@ , , LIT@ , , THEN ; IMMEDIATE
 
-: PARSE >R >IN @ \ offset ; R: char
-        BEGIN KEY DUP R@ = SWAP 10 = OR UNTIL
-        R> DROP DUP 5 CELLS @ + SWAP >IN @ SWAP - 1- ;
+: PARSE ( char "ccc<char>" -- c-addr u )
+  >R >IN @ BEGIN KEY DUP R@ = SWAP 10 = OR UNTIL
+  R> DROP DUP 5 CELLS @ + SWAP >IN @ SWAP - 1- ;
+: PARSE-NAME ( "<spaces>name<spaces>" -- c-addr u )
+  BEGIN KEY DUP 10 = IF DROP 5 CELLS @ >IN @ + 0 EXIT THEN BL <> UNTIL
+  >IN @ BEGIN KEY DUP BL = SWAP 10 = OR UNTIL
+  DUP 5 CELLS @ + 1- SWAP >IN @ SWAP - ;
+
+: C" [CHAR] " PARSE                           \ c-addr u
+     POSTPONE JUMP DUP 1+ ALIGNED DUP CELL+ , \ c-addr u offset
+     >R DUP HERE C! HERE 1+ SWAP MOVE R>      \ offset
+     DUP ALLOT HERE SWAP - POSTPONE LITERAL ; IMMEDIATE
 : S" [CHAR] " PARSE                        \ c-addr u
      POSTPONE JUMP DUP ALIGNED DUP CELL+ , \ c-addr u offset
      >R >R HERE R@ MOVE R> R>              \ u offset
      DUP ALLOT HERE SWAP - POSTPONE LITERAL POSTPONE LITERAL ; IMMEDIATE
 : ." POSTPONE S" POSTPONE TYPE ; IMMEDIATE
 : .( [CHAR] ) PARSE TYPE ; IMMEDIATE
+: ACCEPT ( c-addr +n1 -- +n2 ) >R R@ 0 DO
+           KEY DUP 10 = IF 2DROP I UNLOOP R> DROP EXIT THEN OVER I + C!
+         LOOP DROP R> ;
 
 : WITHIN ( n1|u1 n2|u2 n3|u3 -- flag )
   2DUP > >R >R OVER > INVERT SWAP R> < R> IF OR ELSE AND THEN ;
 
+: 2* 2 * ;
+: 2/ DUP 0< IF 1- THEN 2 / ; \ signed right shift
+: LSHIFT 0 ?DO 2* LOOP ;
+: RSHIFT 0 ?DO ( ... ) LOOP ;
+: /MOD 2DUP / SWAP OVER * ROT SWAP - SWAP ;
+: FM/MOD ;
+: SM/REM ;
+\ Idea: take the upper and lower halves:
+\ (a1 * 2^n + b1) * (a2 * 2^n + b2) = (a1*a2) * 2^2n + (a1*b2+a2*b1)*2^n + b1*b2
+: M* ;
+: */MOD >R M* R> FM/MOD ;
+: */ */MOD NIP ;
+: U< ;
+: U> ;
+: UM* ;
+: UM/MOD ;
+
+\ TODO - should this use UM* ?
 : >NUMBER ( ud1 c-addr1 u1 -- ud2 c-addr2 u2 )
   DUP 0= IF EXIT THEN OVER C@
   DUP [CHAR] 0 [CHAR] 9 1+ WITHIN IF [CHAR] 0 - ELSE
   DUP [CHAR] A [CHAR] Z    WITHIN IF [CHAR] A - 10 + ELSE
   DUP [CHAR] a [CHAR] z    WITHIN IF [CHAR] a - 10 + ELSE
   DROP EXIT THEN THEN THEN
-  BASE @ OVER > IF \ ud1 c-addr1 u1 n
-    SWAP >R 2>R BASE @ * R> + R> 1+ R> 1- RECURSE
+  BASE @ OVER > IF     \ ud1 c-addr1 u1 n
+    SWAP >R 2>R BASE @ \ ud1-lo ud1-hi base ; R: n c-addr u1
+    SWAP OVER * ROT ROT M* ROT +     \ this is the same as 1 M*/
+    R> ROT + SWAP                    \ this is the same as M+
+    R> 1+ R> 1- RECURSE
   ELSE DROP THEN ;
 
 \ Very similar to S" but with backlash substitutions
@@ -216,8 +247,8 @@ DECIMAL
             [CHAR] v OF 11 ENDOF
             [CHAR] z OF  0 ENDOF
             [CHAR] " OF 34 ENDOF
-            [CHAR] x OF 1+ BASE @ HEX OVER 0 SWAP 2 \ c-addr old-base 0 c-addr 2
-                        >NUMBER 2DROP >R BASE ! 1+ R> ENDOF
+            [CHAR] x OF 1+ BASE @ HEX OVER 0 S>D SWAP 2 \ c-addr base 0 c-addr 2
+                        >NUMBER 2DROP DROP >R BASE ! 1+ R> ENDOF
             [CHAR] \ OF 92 ENDOF
             ." invalid escape sequence"
           ENDCASE
@@ -226,5 +257,14 @@ DECIMAL
       HERE OVER - 1 CELLS - >R ALIGN HERE OVER - \ size-addr a-len ; R: len
       DUP ROT ! HERE SWAP - CELL+                \ addr ; R: len
       POSTPONE LITERAL R> POSTPONE LITERAL ; IMMEDIATE
+
+: <# ;
+: # ;
+: #S ;
+: #> ;
+: HOLD ;
+: SIGN 0< IF [CHAR] - HOLD THEN ;
+: . <# DUP SIGN ABS #S #> TYPE ;
+: U. <# #S #> TYPE ;
 
 : ENVIRONMENT? 2DROP FALSE ;
