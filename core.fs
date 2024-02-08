@@ -109,7 +109,7 @@
 : S>D 0 ;
 
 : ALIGNED DUP 1 CELLS MOD DUP IF - CELL+ ELSE DROP THEN ;
-: ALIGN HERE DUP ALIGNED - ALLOT ;
+: ALIGN HERE DUP ALIGNED SWAP - ALLOT ;
 : >BODY CELL+ DUP @ 31 AND + 1+ ALIGNED ;
 : RECURSE 10 CELLS @ >BODY , ; IMMEDIATE
 
@@ -184,5 +184,47 @@ DECIMAL
      DUP ALLOT HERE SWAP - POSTPONE LITERAL POSTPONE LITERAL ; IMMEDIATE
 : ." POSTPONE S" POSTPONE TYPE ; IMMEDIATE
 : .( [CHAR] ) PARSE TYPE ; IMMEDIATE
+
+: WITHIN ( n1|u1 n2|u2 n3|u3 -- flag )
+  2DUP > >R >R OVER > INVERT SWAP R> < R> IF OR ELSE AND THEN ;
+
+: >NUMBER ( ud1 c-addr1 u1 -- ud2 c-addr2 u2 )
+  DUP 0= IF EXIT THEN OVER C@
+  DUP [CHAR] 0 [CHAR] 9 1+ WITHIN IF [CHAR] 0 - ELSE
+  DUP [CHAR] A [CHAR] Z    WITHIN IF [CHAR] A - 10 + ELSE
+  DUP [CHAR] a [CHAR] z    WITHIN IF [CHAR] a - 10 + ELSE
+  DROP EXIT THEN THEN THEN
+  BASE @ OVER > IF \ ud1 c-addr1 u1 n
+    SWAP >R 2>R BASE @ * R> + R> 1+ R> 1- RECURSE
+  ELSE DROP THEN ;
+
+\ Very similar to S" but with backlash substitutions
+: S\" [CHAR] " PARSE POSTPONE JUMP HERE 0 , >R OVER + >R
+      BEGIN \ c-addr ; R: size-addr end-addr
+        DUP C@ [CHAR] \ = IF
+          1+ DUP C@ CASE
+            [CHAR] a OF  7 ENDOF
+            [CHAR] b OF  8 ENDOF
+            [CHAR] e OF 27 ENDOF
+            [CHAR] f OF 12 ENDOF
+            [CHAR] l OF 10 ENDOF
+            [CHAR] m OF 13 C, 10 ENDOF
+            [CHAR] n OF 10 ENDOF
+            [CHAR] q OF 34 ENDOF
+            [CHAR] r OF 13 ENDOF
+            [CHAR] t OF  9 ENDOF
+            [CHAR] v OF 11 ENDOF
+            [CHAR] z OF  0 ENDOF
+            [CHAR] " OF 34 ENDOF
+            [CHAR] x OF 1+ BASE @ HEX OVER 0 SWAP 2 \ c-addr old-base 0 c-addr 2
+                        >NUMBER 2DROP >R BASE ! 1+ R> ENDOF
+            [CHAR] \ OF 92 ENDOF
+            ." invalid escape sequence"
+          ENDCASE
+        ELSE DUP C@ THEN C, 1+ DUP R@ < WHILE
+      REPEAT DROP R> DROP R>                     \ size-addr
+      HERE OVER - 1 CELLS - >R ALIGN HERE OVER - \ size-addr a-len ; R: len
+      DUP ROT ! HERE SWAP - CELL+                \ addr ; R: len
+      POSTPONE LITERAL R> POSTPONE LITERAL ; IMMEDIATE
 
 : ENVIRONMENT? 2DROP FALSE ;
