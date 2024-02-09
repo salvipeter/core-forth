@@ -1,7 +1,7 @@
 : .S ( -- )
   [CHAR] < EMIT BL EMIT
   DEPTH 0 ?DO DEPTH I - 1- PICK . BL EMIT LOOP
-  [CHAR] > EMIT CR ;
+  [CHAR] > EMIT ;
 
 : FIND-NAME ( xt -- c-addr )
   >R 1 CELLS @ BEGIN DUP R@ > WHILE @ REPEAT R> DROP CELL+ ;
@@ -15,3 +15,5 @@
 \ Since literals may be execution tokens,
 \ it displays them as such if there is an exact match.
 : SEE ( "<spaces>name" -- ) ;
+
+.( [2J[0;0HWelcome to Core Forth!)

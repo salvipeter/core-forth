@@ -64,6 +64,15 @@ ucell to_body(ucell entry) {
   return entry;
 }
 
+int readline() {
+  if (!fgets(&memory[get(TIB)], TIB_SIZE * CELL_SIZE, stdin))
+    return FALSE;
+  int len = strlen(&memory[get(TIB)]);
+  /* Undo cursor movement using a VT100 sequence, and write a space */
+  printf("[1A[%dC", len);
+  return TRUE;
+}
+
 int fn_get(void) {
   if (depth() < 1) {
     printf(" stack underflow\n");
@@ -171,7 +180,7 @@ int fn_nand(void) {
 
 int fn_key(void) {
   if (*(&memory[get(TIB)] + get(IN)) == '\0') {
-    if (!fgets(&memory[get(TIB)], TIB_SIZE * CELL_SIZE, stdin))
+    if (!readline())
       return FALSE;
     set(IN, 0);
   }
@@ -351,7 +360,7 @@ int main(int argc, char **argv) {
 
   /* Interpreter loop */
   while (TRUE) {
-    if (!fgets(&memory[get(TIB)], TIB_SIZE * CELL_SIZE, stdin))
+    if (!readline())
       break;
     set(IN, 0);
     while (TRUE) {

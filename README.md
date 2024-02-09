@@ -102,7 +102,7 @@ A dictionary entry has the following form:
 | K bytes | aligning (K is minimal s.t. 1+N+K is a multiple of the cell size) |
 | M cells | body (addresses of other bodies)                                  |
 
-## Implementation notes
+## VM implementation notes
 
 Characters are assumed to be 1 byte, but cell size is easily adjustable (default is 32 bits).
 Needed changes: redefine `cell`, `ucell`, `udcell` and `CELL_SIZE` in `vm.c`, 
@@ -116,6 +116,9 @@ in words such as `WORD`, `PARSE`, etc.
 The body of system words (i.e., one of `! + 0< : ; @ CELLS EMIT EXIT KEY NAND UM* UM/MOD`)
 is a single negative number (-1 for `!`, -2 for `+` etc. to -13 for `UM/MOD`).
 Literals are loaded by a special code (-14), but this is reimplemented later in `LIT@`.
+
+Instead of using a full-fledged readline library, input-ending newlines are avoided
+using VT100 control sequences (so it looks better on a terminal that understands that).
 
 ## Testing
 
