@@ -293,3 +293,7 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
      ELSE ( interpretation ) ' DEFER! THEN ; IMMEDIATE
 : ACTION-OF STATE @ IF ( compilation ) ' POSTPONE LITERAL POSTPONE DEFER@
             ELSE ( interpretation ) ' DEFER@ THEN ; IMMEDIATE
+
+: VALUE CREATE , DOES> @ ;
+: TO STATE @ IF ( compilation ) ' 3 CELLS + POSTPONE LITERAL POSTPONE !
+     ELSE ( interpretation ) ' 3 CELLS + ! THEN ; IMMEDIATE
