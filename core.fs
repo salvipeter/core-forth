@@ -283,3 +283,13 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
 : U. 0 U.R ;
 
 : ENVIRONMENT? 2DROP FALSE ;
+
+: MARKER CREATE 1 CELLS @ @ , DOES> @ 1 CELLS ! ;
+
+: DEFER CREATE 0 , DOES> @ EXECUTE ;
+: DEFER@ 3 CELLS + @ ;
+: DEFER! 3 CELLS + ! ;
+: IS STATE @ IF ( compilation ) ' POSTPONE LITERAL POSTPONE DEFER!
+     ELSE ( interpretation ) ' DEFER! THEN ; IMMEDIATE
+: ACTION-OF STATE @ IF ( compilation ) ' POSTPONE LITERAL POSTPONE DEFER@
+            ELSE ( interpretation ) ' DEFER@ THEN ; IMMEDIATE
