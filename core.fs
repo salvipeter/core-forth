@@ -257,7 +257,7 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
             [CHAR] v OF 11 ENDOF
             [CHAR] z OF  0 ENDOF
             [CHAR] " OF 34 ENDOF
-            [CHAR] x OF 1+ BASE @ HEX OVER 0 S>D ROT 2 \ c-addr base 0 c-addr 2
+            [CHAR] x OF 1+ BASE @ HEX OVER 0 0 ROT 2 \ c-addr base 0 c-addr 2
                         >NUMBER 2DROP DROP >R BASE ! 1+ R> ENDOF
             [CHAR] \ OF 92 ENDOF
             ." invalid escape sequence" CR
@@ -271,14 +271,15 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
 : HOLD 12 CELLS DUP @ 1- DUP ROT ! C! ;
 : HOLDS >R 12 CELLS DUP @ R@ - DUP ROT ! R> MOVE ;
 : <# PAD 12 CELLS ! ; \ SysVar 12 : start of number image
-: # BASE @ >R S>D R@ UM/MOD R> SWAP >R UM/MOD R>    \ = BASE @ UD/MOD
+: # BASE @ >R 0 R@ UM/MOD R> SWAP >R UM/MOD R>    \ = BASE @ UD/MOD
     ROT DUP 10 < IF [CHAR] 0 + ELSE [CHAR] A + 10 - THEN HOLD ;
 : #S BEGIN 2DUP 0= SWAP 0= NAND WHILE # REPEAT ;
 : #> 2DROP 12 CELLS @ PAD OVER - ;
 : SIGN 0< IF [CHAR] - HOLD THEN ;
-: . DUP ABS S>D <# #S ROT SIGN #> TYPE ;
-: U. S>D <# #S #> TYPE ; \ TODO : does not work for 'negative' numbers
-: .R ;
-: U.R ;
+: .R >R DUP ABS 0 <# #S ROT SIGN #> \ c-addr u ; R: len
+     DUP R@ < IF R> OVER - SPACES ELSE R> DROP THEN TYPE ;
+: U.R >R 0 <# #S #> DUP R@ < IF R> OVER - SPACES ELSE R> DROP THEN TYPE ;
+: . 0 .R ;
+: U. 0 U.R ;
 
 : ENVIRONMENT? 2DROP FALSE ;

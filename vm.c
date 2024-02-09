@@ -189,6 +189,7 @@ int fn_emit(void) {
   }
   cell x = get(get(DSP));
   printf("%c", (char)(x & 0xff));
+  fflush(stdout);
   set(DSP, get(DSP) + CELL_SIZE);
   return TRUE;
 }
@@ -388,6 +389,7 @@ int main(int argc, char **argv) {
         break;
       }
     }
+    printf(" ok\n");
 #ifdef DEBUG
     printf("[%d] Stack:", (get(TIB) - get(RSP)) / CELL_SIZE);
     for (int i = depth() - 1; i >= 0; --i)
