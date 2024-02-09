@@ -12,6 +12,8 @@ It is minimal in two senses:
 
 Characters are assumed to be 1 byte, but cell size is easily adjustable (default is 32 bits).
 The system is assumed to be little-endian, and endline character is 10 (line feed).
+The input is read one line at a time, and end-of-line is considered a delimiter
+in words such as `WORD`, `PARSE`, etc.
 
 ## Credits
 

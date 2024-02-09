@@ -3,7 +3,7 @@
 : CHAR+ 1 + ;
 : CHARS ;
 
-: HERE  0 CELLS @ ;
+: HERE  0 @ ;
 : >IN   5 CELLS ;
 : STATE 9 CELLS ;
 
@@ -211,14 +211,16 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
 1 8 CELLS 1- LSHIFT 11 CELLS ! \ SysVar 11 : highest bit = 2^(n-1)
 : RSHIFT 0 ?DO 2/ 11 CELLS @ INVERT AND LOOP ;
 : /MOD 2DUP / SWAP OVER * ROT SWAP - SWAP ;
-: FM/MOD ;
-: SM/REM ;
+: SM/REM ; \ a maradek elojele ugyanaz, mint az osztandoe
+: FM/MOD DUP >R SM/REM                      \ rem quot ; R: divisor
+         OVER DUP 0<> SWAP 0< R@ 0< XOR AND \ rem quot flag [= rem*divisor < 0]
+         IF 1 - SWAP R> + SWAP ELSE R> DROP THEN ;
 \ Idea: take the upper and lower halves:
 \ (a1 * 2^n + b1) * (a2 * 2^n + b2) = (a1*a2) * 2^2n + (a1*b2+a2*b1)*2^n + b1*b2
 : M* ;
 : */MOD >R M* R> FM/MOD ;
 : */ */MOD NIP ;
-: U< 2DUP 0< SWAP 0< XOR IF DROP 0> ELSE < THEN ;
+: U< 2DUP * 0= IF 0<> NIP ELSE 2DUP 0< SWAP 0< XOR IF DROP 0> ELSE < THEN THEN ;
 : U> SWAP U< ;
 : UM* ;
 : UM/MOD ;
