@@ -1,5 +1,4 @@
-: CELL+ 4 + ;
-: CELLS 4 * ;
+: CELL+ 1 CELLS + ;
 : CHAR+ 1 + ;
 : CHARS ;
 
@@ -102,8 +101,15 @@
 : ABS DUP 0< IF NEGATE THEN ;
 : MIN 2DUP > IF SWAP THEN DROP ;
 : MAX 2DUP < IF SWAP THEN DROP ;
-: MOD 2DUP / * - ;
 : S>D DUP 0< IF -1 ELSE 0 THEN ;
+: DABS DUP 0< IF INVERT SWAP DUP 0= IF DROP 1+ 0 ELSE NEGATE SWAP THEN THEN ;
+: SM/REM OVER >R >R DABS R@ ABS UM/MOD R> R@ XOR
+         0< IF NEGATE THEN SWAP R> 0< IF NEGATE THEN SWAP ;
+: FM/MOD DUP >R SM/REM OVER DUP 0<> SWAP 0< R@ 0< XOR AND
+         IF 1 - SWAP R> + SWAP ELSE R> DROP THEN ;
+: /MOD >R S>D R> SM/REM ;
+: / /MOD NIP ;
+: MOD /MOD DROP ;
 
 : ALIGNED DUP 1 CELLS MOD DUP IF - CELL+ ELSE DROP THEN ;
 : ALIGN HERE DUP ALIGNED SWAP - ALLOT ;
@@ -205,31 +211,21 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
 : WITHIN ( n1|u1 n2|u2 n3|u3 -- flag )
   2DUP > >R >R OVER > INVERT SWAP R> < R> IF OR ELSE AND THEN ;
 
+: M* ( n1 n2 -- d ) DUP 0< IF NEGATE -1 ELSE 1 THEN ROT \ |n2| sign n1
+     DUP 0< IF NEGATE SWAP NEGATE SWAP THEN ROT UM* ROT \ |n1|*|n2| sign
+     0< IF INVERT SWAP ?DUP 0= IF 1+ 0 ELSE NEGATE SWAP THEN THEN ;
+: * M* DROP ;
+: */MOD >R M* R> FM/MOD ;
+: */ */MOD NIP ;
+: U< 2DUP * 0= IF 0<> NIP ELSE 2DUP 0< SWAP 0< XOR IF DROP 0> ELSE < THEN THEN ;
+: U> SWAP U< ;
+
 : 2* 2 * ;
 : 2/ DUP 0< IF 1- THEN 2 / ; \ signed right shift
 : LSHIFT 0 ?DO 2* LOOP ;
 1 8 CELLS 1- LSHIFT 11 CELLS ! \ SysVar 11 : highest bit = 2^(n-1)
 : RSHIFT 0 ?DO 2/ 11 CELLS @ INVERT AND LOOP ;
-: /MOD 2DUP / SWAP OVER * ROT SWAP - SWAP ;
-: SM/REM ; \ a maradek elojele ugyanaz, mint az osztandoe
-: FM/MOD DUP >R SM/REM                      \ rem quot ; R: divisor
-         OVER DUP 0<> SWAP 0< R@ 0< XOR AND \ rem quot flag [= rem*divisor < 0]
-         IF 1 - SWAP R> + SWAP ELSE R> DROP THEN ;
-\ Idea: take the upper and lower halves:
-\ (a1 * 2^n + b1) * (a2 * 2^n + b2) = (a1*a2) * 2^2n + (a1*b2+a2*b1)*2^n + b1*b2
-: M* ;
-: */MOD >R M* R> FM/MOD ;
-: */ */MOD NIP ;
-: U< 2DUP * 0= IF 0<> NIP ELSE 2DUP 0< SWAP 0< XOR IF DROP 0> ELSE < THEN THEN ;
-: U> SWAP U< ;
-: UM* ;
-: UM/MOD ;
 
-\ Just for fun: multiplication and division
-\ : * ;
-\ : / ;
-
-\ TODO - should this use UM* ?
 : >NUMBER ( ud1 c-addr1 u1 -- ud2 c-addr2 u2 )
   DUP 0= IF EXIT THEN OVER C@
   DUP [CHAR] 0 [CHAR] 9 1+ WITHIN IF [CHAR] 0 - ELSE
@@ -237,9 +233,9 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
   DUP [CHAR] a [CHAR] z    WITHIN IF [CHAR] a - 10 + ELSE
   DROP EXIT THEN THEN THEN
   BASE @ OVER > IF     \ ud1 c-addr1 u1 n
-    SWAP >R 2>R BASE @ \ ud1-lo ud1-hi base ; R: n c-addr u1
-    SWAP OVER * ROT ROT M* ROT +     \ this is the same as 1 M*/
-    R> ROT + SWAP                    \ this is the same as M+
+    SWAP >R 2>R BASE @ \ ud1-lo ud1-hi base ; R: u1 c-addr n
+    SWAP OVER * ROT ROT UM* ROT +                     \ multiply ud1 with base
+    R> ROT >R R@ + DUP R> < IF SWAP 1+ ELSE SWAP THEN \ and add n to the product
     R> 1+ R> 1- RECURSE
   ELSE DROP THEN ;
 
@@ -261,10 +257,10 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
             [CHAR] v OF 11 ENDOF
             [CHAR] z OF  0 ENDOF
             [CHAR] " OF 34 ENDOF
-            [CHAR] x OF 1+ BASE @ HEX OVER 0 S>D SWAP 2 \ c-addr base 0 c-addr 2
+            [CHAR] x OF 1+ BASE @ HEX OVER 0 S>D ROT 2 \ c-addr base 0 c-addr 2
                         >NUMBER 2DROP DROP >R BASE ! 1+ R> ENDOF
             [CHAR] \ OF 92 ENDOF
-            ." invalid escape sequence"
+            ." invalid escape sequence" CR
           ENDCASE
         ELSE DUP C@ THEN C, 1+ DUP R@ < WHILE
       REPEAT DROP R> DROP R>                     \ size-addr

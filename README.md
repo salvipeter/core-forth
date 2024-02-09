@@ -10,11 +10,6 @@ It is minimal in two senses:
  
  - Aside from a few very basic words, everything is written in Forth itself
 
-Characters are assumed to be 1 byte, but cell size is easily adjustable (default is 32 bits).
-The system is assumed to be little-endian, and endline character is 10 (line feed).
-The input is read one line at a time, and end-of-line is considered a delimiter
-in words such as `WORD`, `PARSE`, etc.
-
 ## Credits
 
 Based on [milliForth](https://github.com/fuzzballcat/milliForth),
@@ -30,6 +25,7 @@ Some words are defined based on reference implementations at the
 The following words are not part of the *core* and *core extension* datasets:
 
 - `COMPARE ( c-addr1 u1 c-addr2 u2 -- n )` compares two strings (part of the *string* wordset)
+- `DABS ( d -- ud )` computes the absolute value of a double cell (part of the *double* wordset)
 - `JUMP ( -- )` jumps to the relative address in the next cell
 - `?JUMP ( flag -- )` jumps to the relative address in the next cell when `flag` is `0`;
   otherwise jumps over the next cell
@@ -42,6 +38,8 @@ The following words are not part of the *core* and *core extension* datasets:
 An additional file (`utils.fs`) contains some standard utilities from the *tools* wordset:
 - `.S ( -- )`
 - `SEE ( "<spaces>name" -- )`
+It also provides a utility for selectively forgetting words by setting their name length to 0:
+- `FORGET-NAME ( "<spaces>name" -- )`
 <TODO>
 
 ## About the virtual machine
@@ -79,23 +77,20 @@ The first part of the memory contains the following system variables:
 
 The virtual machine also knows some basic operations:
 
-- `@ ( a-addr -- x )`
 - `! ( x a-addr -- )`
-- `0< ( n -- flag )`
 - `+ ( n1|u1 n2|u2 -- n3|u3 )`
-- `* ( n1|u1 n2|u2 -- n3|u3 )`
-- `/ ( n1|u1 n2|u2 -- n3|u3 )`
-- `NAND ( x1 x2 -- x3 )`
-- `KEY ( -- char )`
+- `0< ( n -- flag )`
+- `@ ( a-addr -- x )`
+- `CELLS ( n1 -- n2 )`
 - `EMIT ( x -- )`
 - `EXIT ( -- ) ( R: nest-sys -- )`
+- `KEY ( -- char )`
+- `NAND ( x1 x2 -- x3 )`
+- `UM* ( u1 u2 -- ud )`
+- `UM/MOD ( ud u1 -- u2 u3 )`
 
-It also has a full interpreter that can parse decimal numbers, and define new words with `: ... ;`.
-(This is for bootstrapping; these functionalities are rewritten later in `core.fs`.)
-
-Note that while addition, multiplication and division could be written in Forth, 
-as well, they are incorporated in the interpreter for efficiency reasons.
-A naïve implementation is included in comments.
+It also has an interpreter that can parse decimal numbers, and define new words with `: ... ;`.
+(This is only for bootstrapping; the interpreter and `:`, `;` are rewritten later in `core.fs`.)
 
 A dictionary entry has the following form:
 
@@ -107,8 +102,20 @@ A dictionary entry has the following form:
 | K bytes | aligning (K is minimal s.t. 1+N+K is a multiple of the cell size) |
 | M cells | body (addresses of other bodies)                                  |
 
-The body of system words (i.e., one of `@ ! 0< + * / NAND EXIT KEY EMIT : ;`)
-is a single negative number (-1 for `@`, -2 for `!` etc.).
+## Implementation notes
+
+Characters are assumed to be 1 byte, but cell size is easily adjustable (default is 32 bits).
+Needed changes: redefine `cell`, `ucell`, `udcell` and `CELL_SIZE` in `vm.c`, 
+and check the mixed-precision functions `fn_mult` and `fn_divmod`.
+
+The system is assumed to be little-endian, and endline character is 10 (line feed).
+
+Input is read one line at a time, and end-of-line is considered a delimiter
+in words such as `WORD`, `PARSE`, etc.
+
+The body of system words (i.e., one of `! + 0< : ; @ CELLS EMIT EXIT KEY NAND UM* UM/MOD`)
+is a single negative number (-1 for `!`, -2 for `+` etc. to -13 for `UM/MOD`).
+Literals are loaded by a special code (-14), but this is reimplemented later in `LIT@`.
 
 ## Testing
 

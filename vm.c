@@ -6,6 +6,7 @@
 
 #define cell int32_t
 #define ucell uint32_t
+#define udcell uint64_t
 #define CELL_SIZE 4
 #define MEMORY_SIZE 10000000
 #define RESERVED 20
@@ -15,6 +16,8 @@
 
 #define TRUE -1
 #define FALSE 0
+
+udcell mask = ((udcell)1 << 8 * CELL_SIZE) - 1;
 
 ucell HERE    =  0*CELL_SIZE;
 ucell DICT    =  1*CELL_SIZE;
@@ -121,20 +124,37 @@ int fn_mult(void) {
     printf(" stack underflow\n");
     return FALSE;
   }
-  cell x = get(get(DSP)), y = get(get(DSP) + CELL_SIZE);
-  set(DSP, get(DSP) + CELL_SIZE);
-  set(get(DSP), x * y);
+  ucell dsp = get(DSP);
+  ucell x = get(dsp), y = get(dsp + CELL_SIZE);
+  udcell r = (udcell)x * (udcell)y;
+  set(dsp + CELL_SIZE, r & mask);
+  set(dsp, (r >> 8 * CELL_SIZE) & mask);
   return TRUE;
 }
 
-int fn_div(void) {
+int fn_cells(void) {
+  if (depth() < 1) {
+    printf(" stack underflow\n");
+    return FALSE;
+  }
+  cell x = get(get(DSP));
+  set(get(DSP), CELL_SIZE * x);
+  return TRUE;
+}
+
+int fn_divmod(void) {
   if (depth() < 2) {
     printf(" stack underflow\n");
     return FALSE;
   }
-  cell x = get(get(DSP)), y = get(get(DSP) + CELL_SIZE);
-  set(DSP, get(DSP) + CELL_SIZE);
-  set(get(DSP), y / x);
+  ucell dsp = get(DSP);
+  ucell x = get(dsp), y = get(dsp + CELL_SIZE), z = get(dsp + 2 * CELL_SIZE);
+  udcell yz = ((udcell)y << 8 * CELL_SIZE) + (udcell)z;
+  udcell q = yz / (udcell)x;
+  ucell m = yz % (udcell)x;
+  set(dsp + 2 * CELL_SIZE, m);
+  set(dsp + CELL_SIZE, q & mask);
+  set(DSP, dsp + CELL_SIZE);
   return TRUE;
 }
 
@@ -210,8 +230,8 @@ int fn_semicolon(void) {
 
 typedef int(*sysfn)(void);
 sysfn sys_functions[] = {
-  fn_get, fn_set, fn_less, fn_add, fn_mult, fn_div,
-  fn_nand, fn_key, fn_emit, fn_colon, fn_semicolon
+  fn_set, fn_add, fn_less, fn_colon, fn_semicolon, fn_get,
+  fn_cells, fn_emit, NULL /* exit */, fn_key, fn_nand, fn_mult, fn_divmod
 };
 
 void add_dict_entry(const char *name, int immediate, int code) {
@@ -242,10 +262,10 @@ int eval(ucell entry) {
     while (entry) {
       cell index = get(entry);
       if (index < 0) {
-        if (index == -12) {     /* EXIT */
+        if (index == -9) {     /* EXIT */
           entry = get(get(RSP) + CELL_SIZE);
           set(RSP, get(RSP) + 2 * CELL_SIZE);
-        } else if (index == -13) { /* number literal */
+        } else if (index == -14) { /* number literal */
           set(DSP, get(DSP) - CELL_SIZE);
           set(get(DSP), get(entry + CELL_SIZE));
           entry += 2 * CELL_SIZE;
@@ -320,18 +340,19 @@ int main(int argc, char **argv) {
   set(STATE,   FALSE);
 
   /* Set up system functions */
-  add_dict_entry("@",    FALSE,  -1);
-  add_dict_entry("!",    FALSE,  -2);
-  add_dict_entry("0<",   FALSE,  -3);
-  add_dict_entry("+",    FALSE,  -4);
-  add_dict_entry("*",    FALSE,  -5);
-  add_dict_entry("/",    FALSE,  -6);
-  add_dict_entry("NAND", FALSE,  -7);
-  add_dict_entry("KEY",  FALSE,  -8);
-  add_dict_entry("EMIT", FALSE,  -9);
-  add_dict_entry(":",    FALSE, -10);
-  add_dict_entry(";",    TRUE,  -11);
-  add_dict_entry("EXIT", FALSE, -12);
+  add_dict_entry("!",      FALSE,  -1);
+  add_dict_entry("+",      FALSE,  -2);
+  add_dict_entry("0<",     FALSE,  -3);
+  add_dict_entry(":",      FALSE,  -4);
+  add_dict_entry(";",      TRUE,   -5);
+  add_dict_entry("@",      FALSE,  -6);
+  add_dict_entry("CELLS",  FALSE,  -7);
+  add_dict_entry("EMIT",   FALSE,  -8);
+  add_dict_entry("EXIT",   FALSE,  -9);
+  add_dict_entry("KEY",    FALSE, -10);
+  add_dict_entry("NAND",   FALSE, -11);
+  add_dict_entry("UM*",    FALSE, -12);
+  add_dict_entry("UM/MOD", FALSE, -13);
 
   /* Interpreter loop */
   while (TRUE) {
@@ -349,7 +370,7 @@ int main(int argc, char **argv) {
         /* Number */
         if (get(STATE)) {
           /* Compilation */
-          set(get(HERE), -13);
+          set(get(HERE), -14);
           set(HERE, get(HERE) + CELL_SIZE);
           set(get(HERE), number);
           set(HERE, get(HERE) + CELL_SIZE);
