@@ -4,8 +4,7 @@
 : CHARS ;
 
 : HERE  0 CELLS @ ;
-: PAD   3 CELLS @ ;
-: >IN   6 CELLS ;
+: >IN   5 CELLS ;
 : STATE 9 CELLS ;
 
 : 1+  1 + ;
@@ -16,9 +15,9 @@
 : DROP 7 CELLS @ 2 CELLS + 7 CELLS ! ;
 : SWAP OVER OVER 7 CELLS @ 4 CELLS + ! 7 CELLS @ 2 CELLS + ! ;
 
-: R@ 4 CELLS @ 2 CELLS + @ ;
-: >R R@ SWAP 4 CELLS @ CELL+ ! 4 CELLS @ ! ;
-: R> 4 CELLS @ 2 CELLS + DUP @ SWAP R@ SWAP ! 4 CELLS DUP @ 2 CELLS + SWAP ! ;
+: R@ 3 CELLS @ 2 CELLS + @ ;
+: >R R@ SWAP 3 CELLS @ CELL+ ! 3 CELLS @ ! ;
+: R> 3 CELLS @ 2 CELLS + DUP @ SWAP R@ SWAP ! 3 CELLS DUP @ 2 CELLS + SWAP ! ;
 
 : ROT >R SWAP R> SWAP ;
 : TUCK DUP ROT SWAP ;
@@ -154,6 +153,14 @@ DECIMAL
 : ( BEGIN KEY [CHAR] ) = UNTIL ; IMMEDIATE
 : \ BEGIN KEY 10 = UNTIL ; IMMEDIATE
 
+\ At last I can speak!
+\ WORD uses a scratch region that starts at the end of user memory;
+\ we should leave room for that, as well as for a padding region.
+\ 200 bytes each should suffice.
+
+2 CELLS @ 200 - CONSTANT PAD
+PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
+
 : COMPARE ( c-addr1 u1 c-addr2 u2 -- n )
   ROT 2DUP >R >R MIN       \ c-addr1 c-addr2 umin ; R: u1 u2
   0 ?DO 2DUP C@ SWAP C@ <> \ c-addr1 c-addr2 flag ; R: u1 u2
@@ -175,11 +182,11 @@ DECIMAL
 
 : PARSE ( char "ccc<char>" -- c-addr u )
   >R >IN @ BEGIN KEY DUP R@ = SWAP 10 = OR UNTIL
-  R> DROP DUP 5 CELLS @ + SWAP >IN @ SWAP - 1- ;
+  R> DROP DUP 4 CELLS @ + SWAP >IN @ SWAP - 1- ;
 : PARSE-NAME ( "<spaces>name<spaces>" -- c-addr u )
-  BEGIN KEY DUP 10 = IF DROP 5 CELLS @ >IN @ + 0 EXIT THEN BL <> UNTIL
+  BEGIN KEY DUP 10 = IF DROP 4 CELLS @ >IN @ + 0 EXIT THEN BL <> UNTIL
   >IN @ BEGIN KEY DUP BL = SWAP 10 = OR UNTIL
-  DUP 5 CELLS @ + 1- SWAP >IN @ SWAP - ;
+  DUP 4 CELLS @ + 1- SWAP >IN @ SWAP - ;
 
 : C" [CHAR] " PARSE                           \ c-addr u
      POSTPONE JUMP DUP 1+ ALIGNED DUP CELL+ , \ c-addr u offset
@@ -201,8 +208,8 @@ DECIMAL
 : 2* 2 * ;
 : 2/ DUP 0< IF 1- THEN 2 / ; \ signed right shift
 : LSHIFT 0 ?DO 2* LOOP ;
-1 8 CELLS 1- LSHIFT CONSTANT HIGHBIT
-: RSHIFT 0 ?DO 2/ HIGHBIT INVERT AND LOOP ;
+1 8 CELLS 1- LSHIFT 11 CELLS ! \ SysVar 11 : highest bit = 2^(n-1)
+: RSHIFT 0 ?DO 2/ 11 CELLS @ INVERT AND LOOP ;
 : /MOD 2DUP / SWAP OVER * ROT SWAP - SWAP ;
 : FM/MOD ;
 : SM/REM ;

@@ -28,7 +28,6 @@ Some words are defined based on reference implementations at the
 The following words are not part of the *core* and *core extension* datasets:
 
 - `COMPARE ( c-addr1 u1 c-addr2 u2 -- n )` compares two strings (part of the *string* wordset)
-- `HIGHBIT ( -- n )` returns the highest bit in the current cell size (i.e., 2^(n-1))
 - `JUMP ( -- )` jumps to the relative address in the next cell
 - `?JUMP ( flag -- )` jumps to the relative address in the next cell when `flag` is `0`;
   otherwise jumps over the next cell
@@ -49,13 +48,11 @@ The machine memory has the following structure:
 
 ```
 <- low addresses . . . . . . high addresses ->
-VVVVVMMMMMMMMMMMMMMMMMMMMMMSSSPPPRRRRRTTDDDDDD
+VVVVVMMMMMMMMMMMMMMMMMMMMMMMMMMMMRRRRRTTDDDDDD
      M->                           <-R     <-D
 
 V: system variables
 M: main memory (where the user dictionary lives)
-S: scratch (temporary storage for strings etc.)
-P: pad (like scratch, but for the user)
 R: return stack (grows downward)
 T: text input buffer (stores the current line)
 D: data stack (grows downward)
@@ -63,19 +60,20 @@ D: data stack (grows downward)
 
 The first part of the memory contains the following system variables:
 
-| Cell | Name    | Meaning                                    |
-|------|---------|--------------------------------------------|
-| 0    | HERE    | start of unreserved data space             |
-| 1    | DICT    | address of top of the dictionary           |
-| 2    | SCRATCH | scratch address                            |
-| 3    | PAD     | pad address                                |
-| 4    | RSP     | return stack pointer                       |
-| 5    | TIB     | text input buffer address                  |
-| 6    | >IN     | input buffer offset                        |
-| 7    | DSP     | data stack pointer                         |
-| 8    | MEMSIZE | memory size (= first invalid address)      |
-| 9    | STATE   | TRUE during compilation                    |
-| 10   | LATEST  | address of the latest (started) definition |
+| Cell  | Name    | Meaning                                                  |
+|-------|---------|----------------------------------------------------------|
+| 0     | HERE    | start of unreserved data space                           |
+| 1     | DICT    | address of top of the dictionary                         |
+| 2     | MEMEND  | end of user memory                                       |
+| 3     | RSP     | return stack pointer                                     |
+| 4     | TIB     | text input buffer address (= bottom of the return stack) |
+| 5     | >IN     | input buffer offset                                      |
+| 6     | TIBSIZE | text input buffer size                                   |
+| 7     | DSP     | data stack pointer                                       |
+| 8     | MEMSIZE | memory size (= bottom of the data stack)                 |
+| 9     | STATE   | TRUE during compilation                                  |
+| 10    | LATEST  | address of the latest (started) definition               |
+| 11-19 | -       | (reserved for variables in `core.fs`)                    |
 
 The virtual machine also knows some basic operations:
 
@@ -99,13 +97,13 @@ A naïve implementation is included in comments.
 
 A dictionary entry has the following form:
 
-| 1 cell  | Link to previous entry (or 0 at the first entry)                |
-| 1 bit   | 1 if immediate                                                  |
-| 2 bits  | (reserved)                                                      |
-| 5 bits  | name length (max. 31)                                           |
-| N bytes | name                                                            |
-| K bytes | aligning (K is minimal s.t. N+K is a multiple of the cell size) |
-| M cells | body (addresses of other bodies)                                |
+| 1 cell  | Link to previous entry (or 0 at the first entry)                  |
+| 1 bit   | 1 if immediate                                                    |
+| 2 bits  | (reserved)                                                        |
+| 5 bits  | name length (max. 31)                                             |
+| N bytes | name                                                              |
+| K bytes | aligning (K is minimal s.t. 1+N+K is a multiple of the cell size) |
+| M cells | body (addresses of other bodies)                                  |
 
 The body of system words (i.e., one of `@ ! 0< + * / NAND EXIT KEY EMIT : ;`)
 is a single negative number (-1 for `@`, -2 for `!` etc.).
