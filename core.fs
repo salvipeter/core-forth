@@ -297,3 +297,5 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
 : VALUE CREATE , DOES> @ ;
 : TO STATE @ IF ( compilation ) ' 3 CELLS + POSTPONE LITERAL POSTPONE !
      ELSE ( interpretation ) ' 3 CELLS + ! THEN ; IMMEDIATE
+
+: SOURCE 4 CELLS @ 6 CELLS @ ;

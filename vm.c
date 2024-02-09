@@ -68,6 +68,7 @@ int readline() {
   if (!fgets(&memory[get(TIB)], TIB_SIZE * CELL_SIZE, stdin))
     return FALSE;
   int len = strlen(&memory[get(TIB)]);
+  set(TIBSIZE, len);
   /* Undo cursor movement using a VT100 sequence, and write a space */
   printf("[1A[%dC", len);
   return TRUE;
@@ -338,7 +339,6 @@ int main(int argc, char **argv) {
   set(MEMEND,  (MEMORY_SIZE - DSTACK_SIZE - TIB_SIZE - RSTACK_SIZE) * CELL_SIZE);
   set(RSP,     (MEMORY_SIZE - DSTACK_SIZE - TIB_SIZE) * CELL_SIZE);
   set(TIB,     (MEMORY_SIZE - DSTACK_SIZE - TIB_SIZE) * CELL_SIZE);
-  set(TIBSIZE, TIB_SIZE * CELL_SIZE);
   set(DSP,     MEMORY_SIZE * CELL_SIZE);
   set(MEMSIZE, MEMORY_SIZE * CELL_SIZE);
   set(STATE,   FALSE);
