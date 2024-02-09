@@ -280,12 +280,6 @@ int eval(ucell entry) {
         set(RSP, get(RSP) - CELL_SIZE);
         set(get(RSP), entry + CELL_SIZE);
         entry = index;
-#ifdef DEBUG
-        ucell c = get(DICT);
-        while (c > index)
-          c = get(c);
-        printf("Call: %s\n", &memory[c + CELL_SIZE + 1]);
-#endif
       }
     }
   }
@@ -394,9 +388,11 @@ int main(int argc, char **argv) {
         break;
       }
     }
+#ifdef DEBUG
     printf("[%d] Stack:", (get(TIB) - get(RSP)) / CELL_SIZE);
     for (int i = depth() - 1; i >= 0; --i)
       printf(" %d", get(get(DSP) + i * CELL_SIZE));
     printf("\n");
+#endif
   }
 }

@@ -1,4 +1,4 @@
-: .S ( -- ) ;
+: .S ( -- ) DEPTH 0 ?DO DEPTH I - 1- PICK . BL EMIT LOOP CR ;
 
 : FIND-NAME ( xt -- c-addr )
   >R 1 CELLS @ BEGIN DUP R@ > WHILE @ REPEAT R> DROP CELL+ ;

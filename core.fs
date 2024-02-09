@@ -268,15 +268,16 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
       DUP ROT ! HERE SWAP - CELL+                \ addr ; R: len
       POSTPONE LITERAL R> POSTPONE LITERAL ; IMMEDIATE
 
-: <# ;
-: # ;
-: #S ;
-: #> ;
-: HOLD ;
-: HOLDS ;
+: HOLD 12 CELLS DUP @ 1- DUP ROT ! C! ;
+: HOLDS >R 12 CELLS DUP @ R@ - DUP ROT ! R> MOVE ;
+: <# PAD 12 CELLS ! ; \ SysVar 12 : start of number image
+: # BASE @ >R S>D R@ UM/MOD R> SWAP >R UM/MOD R>    \ = BASE @ UD/MOD
+    ROT DUP 10 < IF [CHAR] 0 + ELSE [CHAR] A + 10 - THEN HOLD ;
+: #S BEGIN 2DUP 0= SWAP 0= NAND WHILE # REPEAT ;
+: #> 2DROP 12 CELLS @ PAD OVER - ;
 : SIGN 0< IF [CHAR] - HOLD THEN ;
-: . DUP S>D <# #S ROT SIGN #> TYPE ;
-: U. S>D <# #S #> TYPE ;
+: . DUP ABS S>D <# #S ROT SIGN #> TYPE ;
+: U. S>D <# #S #> TYPE ; \ TODO : does not work for 'negative' numbers
 : .R ;
 : U.R ;
 
