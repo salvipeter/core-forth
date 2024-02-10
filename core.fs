@@ -298,8 +298,6 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
 : TO STATE @ IF ( compilation ) ' 3 CELLS + POSTPONE LITERAL POSTPONE !
      ELSE ( interpretation ) ' 3 CELLS + ! THEN ; IMMEDIATE
 
-: SOURCE 4 CELLS @ 6 CELLS @ ;
-
 \ Create a header for :NONAME as well (for RECURSE to work)
 : :NONAME HERE 10 CELLS ! 0 , 0 , TRUE STATE ! FALSE ; \ FALSE on the stack
 : ; POSTPONE EXIT 10 CELLS @ SWAP \ colon-sys a-addr
@@ -307,3 +305,35 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
 TRUE \ Leave a true here, because the VM implementation of : does not
 : : HERE 10 CELLS ! 1 CELLS @ , PARSE-NAME DUP C, >R     \ c-addr ; R: u
          HERE R@ MOVE R> ALLOT ALIGN TRUE STATE ! TRUE ; \ TRUE on the stack
+
+\ We have a lot of system variables to use, so here's the setup:
+\ - SysVar 13 : SOURCE-ID
+\ - SysVar 14 : saved >IN
+\ - SysVar 15 : length of string to evaluate
+\ - SysVar 16 : address of string to evaluate
+\ - SysVar 17 : verbosity (0 : quiet, 1 : ok, 2 : stack)
+FALSE 13 CELLS !
+1 17 CELLS !
+: SOURCE-ID 13 CELLS @ ;
+: SOURCE SOURCE-ID IF 16 CELLS @ 15 CELLS @ ELSE 4 CELLS @ 6 CELLS @ THEN ;
+: REFILL SOURCE-ID IF FALSE
+                   ELSE 4 CELLS @ BEGIN KEY >R R@ OVER C! 1+ R> 10 = UNTIL
+                        DROP 0 >IN ! TRUE
+                   THEN ;
+: EVALUATE ;
+: SAVE-INPUT ;         \ not implemented
+: RESTORE-INPUT TRUE ;
+
+: QUIT 4 CELLS @ 3 CELLS ! FALSE STATE ! FALSE 13 CELLS !
+       BEGIN REFILL ( interpret )
+             17 CELL @ CASE
+               0 OF ENDOF
+               1 OF ." ok" ENDOF
+               2 OF [CHAR] < EMIT BL EMIT
+                    DEPTH 0 ?DO DEPTH I - 1- PICK . BL EMIT LOOP
+                    [CHAR] > EMIT ENDOF
+             ENDCASE CR
+       AGAIN ;
+: ABORT 8 CELLS @ 7 CELLS ! QUIT ;
+: ABORT" POSTPONE ?DUP POSTPONE IF
+         POSTPONE ." POSTPONE ABORT POSTPONE THEN ; IMMEDIATE

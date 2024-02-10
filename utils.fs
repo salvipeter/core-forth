@@ -1,3 +1,5 @@
+: VERBOSITY 17 CELLS ! ;
+
 : .S ( -- )
   [CHAR] < EMIT BL EMIT
   DEPTH 0 ?DO DEPTH I - 1- PICK . BL EMIT LOOP
