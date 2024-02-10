@@ -10,6 +10,19 @@ It is minimal in two senses:
  
  - Aside from a few very basic words, everything is written in Forth itself
 
+## Rationale
+
+There is (almost) none. I wanted to try to implement a fairly complete Forth system by myself,
+not a toy Forth like (the otherwise wonderful)
+[jonesforth](https://github.com/nornagon/jonesforth/),
+or the Forths built in books like [Let Over Lambda](https://letoverlambda.com/)
+(one of my favorite programming texts).
+
+I was also intrigued by the minimal implementations given in the credits below,
+and wanted to know if these ideas hold even in a full system.
+While I had to make some concessions (like adding the words `UM*` and `UM/MOD`
+as basic words), I am quite content with the results.
+
 ## Credits
 
 Based on [milliForth](https://github.com/fuzzballcat/milliForth),
@@ -19,6 +32,9 @@ by Bernd Paysan.
 
 Some words are defined based on reference implementations at the
 [Forth 2012 Standard website](https://forth-standard.org/).
+
+A few words are modeled after their implementation in
+[Gforth](https://www.gnu.org/software/gforth/).
 
 ## Extra words
 
