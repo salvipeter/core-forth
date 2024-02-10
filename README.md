@@ -53,7 +53,7 @@ The following words are not part of the *core* and *core extension* datasets:
 
 An additional file (`utils.fs`) contains some standard utilities from the *tools* wordset:
 - `.S ( -- )`
-- `SEE ( "<spaces>name" -- )`
+- `SEE ( "<spaces>name" -- )` [very rudimentary]
 It also provides a utility for selectively forgetting words by setting their name length to 0:
 - `FORGET-NAME ( "<spaces>name" -- )`
 <TODO>
