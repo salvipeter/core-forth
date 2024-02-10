@@ -58,8 +58,8 @@
 : 2@ DUP CELL+ @ SWAP @ ;
 
 : IMMEDIATE 1 CELLS @ CELL+ DUP @ 128 OR SWAP ! ;
-: [ 0 STATE ! ; IMMEDIATE
-: ] 1 STATE ! ;
+: [ FALSE STATE ! ; IMMEDIATE
+: ] TRUE STATE ! ;
 : COMPILE, , ;
 : LIT@ R> DUP CELL+ >R @ ;
 : LITERAL LIT@ LIT@ , , ; IMMEDIATE
@@ -127,7 +127,7 @@
 : UNUSED 2 CELLS @ HERE - ;
 
 : CREATE : LIT@ LIT@ , HERE 2 CELLS + ,
-         LIT@ EXIT , 10 CELLS @ 1 CELLS ! 0 STATE ! ;
+         LIT@ EXIT , 10 CELLS @ 1 CELLS ! FALSE STATE ! ;
 : DOES> LIT@ LIT@ ,           1 ,  LIT@ CELLS ,  LIT@     @ ,  LIT@ >BODY ,
         LIT@ LIT@ ,  LIT@  JUMP ,  LIT@  OVER ,  LIT@     ! ,  LIT@ CELL+ ,
         LIT@ HERE ,  LIT@  OVER ,  LIT@     - ,  LIT@  OVER ,  LIT@     ! ,
@@ -299,3 +299,11 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
      ELSE ( interpretation ) ' 3 CELLS + ! THEN ; IMMEDIATE
 
 : SOURCE 4 CELLS @ 6 CELLS @ ;
+
+\ Create a header for :NONAME as well (for RECURSE to work)
+: :NONAME HERE 10 CELLS ! 0 , 0 , TRUE STATE ! FALSE ; \ FALSE on the stack
+: ; POSTPONE EXIT 10 CELLS @ SWAP \ colon-sys a-addr
+    IF 1 CELLS ! ELSE >BODY THEN FALSE STATE ! ; IMMEDIATE
+TRUE \ Leave a true here, because the VM implementation of : does not
+: : HERE 10 CELLS ! 1 CELLS @ , PARSE-NAME DUP C, >R     \ c-addr ; R: u
+         HERE R@ MOVE R> ALLOT ALIGN TRUE STATE ! TRUE ; \ TRUE on the stack

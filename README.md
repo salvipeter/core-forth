@@ -90,7 +90,8 @@ The virtual machine also knows some basic operations:
 - `UM/MOD ( ud u1 -- u2 u3 )`
 
 It also has an interpreter that can parse decimal numbers, and define new words with `: ... ;`.
-(This is only for bootstrapping; the interpreter and `:`, `;` are rewritten later in `core.fs`.)
+This is only for bootstrapping; the interpreter and `:`, `;` are rewritten later in `core.fs`.
+Note that the VM implementation of `:` does not leave anything on the stack.
 
 A dictionary entry has the following form:
 
