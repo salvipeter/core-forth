@@ -68,7 +68,7 @@ int readline() {
   if (!fgets(&memory[get(TIB)], TIB_SIZE * CELL_SIZE, stdin))
     return FALSE;
   int len = strlen(&memory[get(TIB)]);
-  set(TIBSIZE, len);
+  set(TIBSIZE, len - 1);        /* -1 for omitting the newline char */
   /* Undo cursor movement using a VT100 sequence, and write a space */
   printf("[1A[%dC", len);
   return TRUE;
@@ -180,15 +180,18 @@ int fn_nand(void) {
 }
 
 int fn_key(void) {
-  if (*(&memory[get(TIB)] + get(IN)) == '\0') {
-    if (!readline())
-      return FALSE;
-    set(IN, 0);
-  }
-  char c = *(&memory[get(TIB)] + get(IN));
+  /* Not implemented yet */
+  char c = 42;                  /* dummy value */
   set(IN, get(IN) + 1);
   set(DSP, get(DSP) - CELL_SIZE);
   set(get(DSP), c);
+  return TRUE;
+}
+
+int fn_readline(void) {
+  if (!readline())
+    return FALSE;
+  set(IN, 0);
   return TRUE;
 }
 
@@ -242,7 +245,8 @@ int fn_semicolon(void) {
 typedef int(*sysfn)(void);
 sysfn sys_functions[] = {
   fn_set, fn_add, fn_less, fn_colon, fn_semicolon, fn_get,
-  fn_cells, fn_emit, NULL /* exit */, fn_key, fn_nand, fn_mult, fn_divmod
+  fn_cells, fn_emit, NULL /* exit */, fn_key, fn_nand,
+  fn_readline, fn_mult, fn_divmod
 };
 
 void add_dict_entry(const char *name, int immediate, int code) {
@@ -276,7 +280,7 @@ int eval(ucell entry) {
         if (index == -9) {     /* EXIT */
           entry = get(get(RSP) + CELL_SIZE);
           set(RSP, get(RSP) + 2 * CELL_SIZE);
-        } else if (index == -14) { /* number literal */
+        } else if (index == -15) { /* number literal */
           set(DSP, get(DSP) - CELL_SIZE);
           set(get(DSP), get(entry + CELL_SIZE));
           entry += 2 * CELL_SIZE;
@@ -344,19 +348,20 @@ int main(int argc, char **argv) {
   set(STATE,   FALSE);
 
   /* Set up system functions */
-  add_dict_entry("!",      FALSE,  -1);
-  add_dict_entry("+",      FALSE,  -2);
-  add_dict_entry("0<",     FALSE,  -3);
-  add_dict_entry(":",      FALSE,  -4);
-  add_dict_entry(";",      TRUE,   -5);
-  add_dict_entry("@",      FALSE,  -6);
-  add_dict_entry("CELLS",  FALSE,  -7);
-  add_dict_entry("EMIT",   FALSE,  -8);
-  add_dict_entry("EXIT",   FALSE,  -9);
-  add_dict_entry("KEY",    FALSE, -10);
-  add_dict_entry("NAND",   FALSE, -11);
-  add_dict_entry("UM*",    FALSE, -12);
-  add_dict_entry("UM/MOD", FALSE, -13);
+  add_dict_entry("!",         FALSE,  -1);
+  add_dict_entry("+",         FALSE,  -2);
+  add_dict_entry("0<",        FALSE,  -3);
+  add_dict_entry(":",         FALSE,  -4);
+  add_dict_entry(";",         TRUE,   -5);
+  add_dict_entry("@",         FALSE,  -6);
+  add_dict_entry("CELLS",     FALSE,  -7);
+  add_dict_entry("EMIT",      FALSE,  -8);
+  add_dict_entry("EXIT",      FALSE,  -9);
+  add_dict_entry("KEY",       FALSE, -10);
+  add_dict_entry("NAND",      FALSE, -11);
+  add_dict_entry("READ-LINE", FALSE, -12);
+  add_dict_entry("UM*",       FALSE, -13);
+  add_dict_entry("UM/MOD",    FALSE, -14);
 
   /* Interpreter loop */
   while (TRUE) {
@@ -374,7 +379,7 @@ int main(int argc, char **argv) {
         /* Number */
         if (get(STATE)) {
           /* Compilation */
-          set(get(HERE), -14);
+          set(get(HERE), -15);
           set(HERE, get(HERE) + CELL_SIZE);
           set(get(HERE), number);
           set(HERE, get(HERE) + CELL_SIZE);

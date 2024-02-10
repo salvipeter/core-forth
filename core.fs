@@ -144,28 +144,44 @@ VARIABLE BASE
 : HEX 16 BASE ! ;
 DECIMAL
 
+FALSE 11 CELLS !
+: SOURCE-ID 11 CELLS @ ;
+: SOURCE SOURCE-ID IF 13 CELLS @ 14 CELLS @ ELSE 4 CELLS @ 6 CELLS @ THEN ;
+: REFILL SOURCE-ID IF FALSE ELSE READ-LINE TRUE THEN ;
+: EVALUATE >IN @ 12 CELLS ! TRUE 11 CELLS ! 0 >IN ! 14 CELLS ! 13 CELLS ! ;
+: SAVE-INPUT >IN @ ;
+: RESTORE-INPUT SOURCE-ID IF >IN ! FALSE ELSE DROP TRUE THEN ;
+: \ SOURCE >IN ! DROP ; IMMEDIATE
+
+\ At last I can speak!
+
+\ WORD below uses a scratch region that starts at the end of user memory;
+\ we should leave room for that, as well as for a padding region.
+\ 200 bytes each should suffice.
+
+2 CELLS @ 200 - CONSTANT PAD
+PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
+
 : BL 32 ;
 : CR 10 EMIT ;
 : SPACE BL EMIT ;
 : SPACES 0 ?DO SPACE LOOP ;
 : TYPE 0 ?DO DUP C@ EMIT 1+ LOOP DROP ;
 : COUNT DUP C@ SWAP 1+ SWAP ;
-: WORD >R 2 CELLS @ DUP 1+
-       BEGIN KEY DUP R@ = WHILE DROP REPEAT OVER C! 1+
-       BEGIN KEY DUP R@ <> OVER 10 <> AND WHILE OVER C! 1+ REPEAT DROP
-       OVER - 1- OVER C! R> DROP ;
+: WORD 2 CELLS @ DUP 1+ ROT                    \ dest dest+1 char
+       SOURCE >IN @ ?DO 2DUP I + C@ <>
+                        IF LEAVE THEN 1 >IN +!
+                    LOOP DROP                  \ dest dest+k char
+       SOURCE >IN @ ?DO 1 >IN +! 2DUP I + C@ DUP ROT =
+                        IF DROP LEAVE THEN
+                        2>R SWAP R> OVER C! 1+ SWAP R>
+                    LOOP 2DROP                 \ dest dest+n
+       OVER - 1- OVER C! ;
 : CHAR BL WORD 1+ C@ ;
 : [CHAR] LIT@ LIT@ , CHAR , ; IMMEDIATE
-: ( BEGIN KEY [CHAR] ) = UNTIL ; IMMEDIATE
-: \ BEGIN KEY 10 = UNTIL ; IMMEDIATE
-
-\ At last I can speak!
-\ WORD uses a scratch region that starts at the end of user memory;
-\ we should leave room for that, as well as for a padding region.
-\ 200 bytes each should suffice.
-
-2 CELLS @ 200 - CONSTANT PAD
-PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
+: ( SOURCE >IN @ ?DO
+      1 >IN +! DUP I + C@ [CHAR] ) = IF LEAVE THEN
+    LOOP DROP ; IMMEDIATE
 
 : COMPARE ( c-addr1 u1 c-addr2 u2 -- n )
   ROT 2DUP >R >R MIN       \ c-addr1 c-addr2 umin ; R: u1 u2
@@ -187,12 +203,14 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
 : POSTPONE BL WORD FIND 1 = IF , ELSE LIT@ LIT@ , , LIT@ , , THEN ; IMMEDIATE
 
 : PARSE ( char "ccc<char>" -- c-addr u )
-  >R >IN @ BEGIN KEY DUP R@ = SWAP 10 = OR UNTIL
-  R> DROP DUP 4 CELLS @ + SWAP >IN @ SWAP - 1- ;
-: PARSE-NAME ( "<spaces>name<spaces>" -- c-addr u )
-  BEGIN KEY DUP 10 = IF DROP 4 CELLS @ >IN @ + 0 EXIT THEN BL <> UNTIL
-  >IN @ BEGIN KEY DUP BL = SWAP 10 = OR UNTIL
-  DUP 4 CELLS @ + 1- SWAP >IN @ SWAP - ;
+  >IN @ SWAP OVER SOURCE ROT ?DO          \ >in char c-addr
+    1 >IN +! 2DUP I + C@ = IF LEAVE THEN
+  LOOP NIP OVER >R + >IN @ R> - 1- ;
+: PARSE-NAME ( "<spaces>name<space>" -- c-addr u )
+  SOURCE >IN @ ?DO DUP I + C@ BL <> IF LEAVE THEN 1 >IN +! LOOP DROP
+  >IN @
+  SOURCE >IN @ ?DO 1 >IN +! DUP I + C@ BL = IF LEAVE THEN LOOP \ >in c-addr
+  OVER >R + >IN @ R> - 1- ;
 
 : C" [CHAR] " PARSE                           \ c-addr u
      POSTPONE JUMP DUP 1+ ALIGNED DUP CELL+ , \ c-addr u offset
@@ -204,9 +222,8 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
      DUP ALLOT HERE SWAP - POSTPONE LITERAL POSTPONE LITERAL ; IMMEDIATE
 : ." POSTPONE S" POSTPONE TYPE ; IMMEDIATE
 : .( [CHAR] ) PARSE TYPE ; IMMEDIATE
-: ACCEPT ( c-addr +n1 -- +n2 ) >R R@ 0 DO
-           KEY DUP 10 = IF 2DROP I UNLOOP R> DROP EXIT THEN OVER I + C!
-         LOOP DROP R> ;
+: ACCEPT ( c-addr +n1 -- +n2 )
+  SOURCE >IN @ - ROT MIN >R >IN @ + SWAP R@ MOVE R@ >IN +! R> ;
 
 : WITHIN ( n1|u1 n2|u2 n3|u3 -- flag )
   2DUP > >R >R OVER > INVERT SWAP R> < R> IF OR ELSE AND THEN ;
@@ -223,8 +240,8 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
 : 2* 2 * ;
 : 2/ DUP 0< IF 1- THEN 2 / ; \ signed right shift
 : LSHIFT 0 ?DO 2* LOOP ;
-1 8 CELLS 1- LSHIFT 11 CELLS ! \ SysVar 11 : highest bit = 2^(n-1)
-: RSHIFT 0 ?DO 2/ 11 CELLS @ INVERT AND LOOP ;
+1 8 CELLS 1- LSHIFT 15 CELLS !
+: RSHIFT 0 ?DO 2/ 15 CELLS @ INVERT AND LOOP ;
 
 : >NUMBER ( ud1 c-addr1 u1 -- ud2 c-addr2 u2 )
   DUP 0= IF EXIT THEN OVER C@
@@ -268,13 +285,13 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
       DUP ROT ! HERE SWAP - CELL+                \ addr ; R: len
       POSTPONE LITERAL R> POSTPONE LITERAL ; IMMEDIATE
 
-: HOLD 12 CELLS DUP @ 1- DUP ROT ! C! ;
-: HOLDS >R 12 CELLS DUP @ R@ - DUP ROT ! R> MOVE ;
-: <# PAD 12 CELLS ! ; \ SysVar 12 : start of number image
+: HOLD 16 CELLS DUP @ 1- DUP ROT ! C! ;
+: HOLDS >R 16 CELLS DUP @ R@ - DUP ROT ! R> MOVE ;
+: <# PAD 16 CELLS ! ;
 : # BASE @ >R 0 R@ UM/MOD R> SWAP >R UM/MOD R>    \ = BASE @ UD/MOD
     ROT DUP 10 < IF [CHAR] 0 + ELSE [CHAR] A + 10 - THEN HOLD ;
 : #S BEGIN # 2DUP OR 0= UNTIL ;
-: #> 2DROP 12 CELLS @ PAD OVER - ;
+: #> 2DROP 16 CELLS @ PAD OVER - ;
 : SIGN 0< IF [CHAR] - HOLD THEN ;
 : .R >R DUP ABS 0 <# #S ROT SIGN #> \ c-addr u ; R: len
      DUP R@ < IF R> OVER - SPACES ELSE R> DROP THEN TYPE ;
@@ -306,26 +323,26 @@ TRUE \ Leave a true here, because the VM implementation of : does not
 : : HERE 10 CELLS ! 1 CELLS @ , PARSE-NAME DUP C, >R     \ c-addr ; R: u
          HERE R@ MOVE R> ALLOT ALIGN TRUE STATE ! TRUE ; \ TRUE on the stack
 
-\ We have a lot of system variables to use, so here's the setup:
-\ - SysVar 13 : SOURCE-ID
-\ - SysVar 14 : saved >IN
-\ - SysVar 15 : length of string to evaluate
-\ - SysVar 16 : address of string to evaluate
-\ - SysVar 17 : verbosity (0 : quiet, 1 : ok, 2 : stack)
-FALSE 13 CELLS !
 1 17 CELLS !
-: SOURCE-ID 13 CELLS @ ;
-: SOURCE SOURCE-ID IF 16 CELLS @ 15 CELLS @ ELSE 4 CELLS @ 6 CELLS @ THEN ;
-: REFILL SOURCE-ID IF FALSE
-                   ELSE 4 CELLS @ BEGIN KEY >R R@ OVER C! 1+ R> 10 = UNTIL
-                        DROP 0 >IN ! TRUE
-                   THEN ;
-: EVALUATE ;
-: SAVE-INPUT ;         \ not implemented
-: RESTORE-INPUT TRUE ;
-
+DEFER ABORT
+: ABORT" POSTPONE ?DUP POSTPONE IF
+         POSTPONE ." POSTPONE ABORT POSTPONE THEN ; IMMEDIATE
 : QUIT 4 CELLS @ 3 CELLS ! FALSE STATE ! FALSE 13 CELLS !
-       BEGIN REFILL ( interpret )
+       BEGIN REFILL DROP
+             BEGIN
+               SOURCE NIP >IN @ <> WHILE
+               BL WORD DUP C@
+               0<> IF >R 0 0 R@ COUNT >NUMBER
+                      0= IF 2DROP R> DROP                    \ it's a number!
+                            STATE @ IF POSTPONE LITERAL THEN
+                         ELSE DROP 2DROP R> FIND DUP         \ it's a word!
+                              0= IF ABORT" word not found"
+                                 ELSE 0< STATE @ AND
+                                      IF , ELSE EXECUTE THEN
+                                 THEN
+                         THEN
+                   ELSE DROP THEN
+             REPEAT
              17 CELL @ CASE
                0 OF ENDOF
                1 OF ." ok" ENDOF
@@ -334,6 +351,23 @@ FALSE 13 CELLS !
                     [CHAR] > EMIT ENDOF
              ENDCASE CR
        AGAIN ;
-: ABORT 8 CELLS @ 7 CELLS ! QUIT ;
-: ABORT" POSTPONE ?DUP POSTPONE IF
-         POSTPONE ." POSTPONE ABORT POSTPONE THEN ; IMMEDIATE
+:NONAME 8 CELLS @ 7 CELLS ! QUIT ; IS ABORT
+
+: test S" 1 1 +" EVALUATE . ;
+
+QUIT \ Start the interpreter
+
+\ Finally, an overview of the system variables defined here:
+\ |------|-------------------------------------------------|
+\ | Cell | Purpose                                         |
+\ |------|-------------------------------------------------|
+\ |  11  | the value returned by SOURCE-ID (FALSE / TRUE)  |
+\ |  12  | saved >IN                                       |
+\ |  13  | address of string to evaluate                   |
+\ |  14  | length of string to evaluate                    |
+\ |  15  | highest bit in a cell = 2^(n-1)                 |
+\ |  16  | start address of number image                   |
+\ |  17  | verbosity (0: quiet, 1: ok, 2: stack)           |
+\ |  18  | (not used)                                      |
+\ |  19  | (not used)                                      |
+\ |------|-------------------------------------------------|

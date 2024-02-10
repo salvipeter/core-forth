@@ -49,14 +49,14 @@ The following words are not part of the *core* and *core extension* datasets:
   plus the given offset (storage address is given on the data stack in runtime)
 - `LIT@ ( -- x )` loads the next cell onto the data stack and jumps over it
 - `NAND ( x1 x2 -- x3 )` is the bitwise NAND operation
-<TODO>
+- `READ-LINE ( -- )` reads a line from the standard input to the text input buffer
 
 An additional file (`utils.fs`) contains some standard utilities from the *tools* wordset:
 - `.S ( -- )`
 - `SEE ( "<spaces>name" -- )` [very rudimentary]
 It also provides a utility for selectively forgetting words by setting their name length to 0:
 - `FORGET-NAME ( "<spaces>name" -- )`
-<TODO>
+- `VERBOSITY! ( 0 | 1 | 2 -- )` sets the verbosity level of the interpreter
 
 ## About the virtual machine
 
@@ -100,8 +100,9 @@ The virtual machine also knows some basic operations:
 - `CELLS ( n1 -- n2 )`
 - `EMIT ( x -- )`
 - `EXIT ( -- ) ( R: nest-sys -- )`
-- `KEY ( -- char )`
+- `KEY ( -- char )` [currently not implemented in the VM]
 - `NAND ( x1 x2 -- x3 )`
+- `READ-LINE ( -- )`
 - `UM* ( u1 u2 -- ud )`
 - `UM/MOD ( ud u1 -- u2 u3 )`
 
@@ -127,12 +128,10 @@ and check the mixed-precision functions `fn_mult` and `fn_divmod`.
 
 The system is assumed to be little-endian, and endline character is 10 (line feed).
 
-Input is read one line at a time, and end-of-line is considered a delimiter
-in words such as `WORD`, `PARSE`, etc.
-
-The body of system words (i.e., one of `! + 0< : ; @ CELLS EMIT EXIT KEY NAND UM* UM/MOD`)
-is a single negative number (-1 for `!`, -2 for `+` etc. to -13 for `UM/MOD`).
-Literals are loaded by a special code (-14), but this is reimplemented later in `LIT@`.
+The body of system words (i.e., one of
+`! + 0< : ; @ CELLS EMIT EXIT KEY NAND READ-LINE UM* UM/MOD`)
+is a single negative number (-1 for `!`, -2 for `+` etc. to -14 for `UM/MOD`).
+Literals are loaded by a special code (-15), but this is reimplemented later in `LIT@`.
 
 Instead of using a full-fledged readline library, input-ending newlines are avoided
 using VT100 control sequences (so it looks better on a terminal that understands that).

@@ -1,4 +1,4 @@
-: VERBOSITY 17 CELLS ! ;
+: VERBOSITY! 17 CELLS ! ;
 
 : .S ( -- )
   [CHAR] < EMIT BL EMIT
@@ -25,7 +25,7 @@
   BEGIN
     BL EMIT
     DUP @ [ ' EXIT ] LITERAL <> WHILE
-    DUP @ -14 = IF ." <LIT>" ELSE
+    DUP @ -15 = IF ." <LIT>" ELSE
       DUP @ DUP FIND-HEADER SWAP OVER >BODY     \ body header xt? xt
       = IF CELL+ DUP 1+ SWAP @ 31 AND TYPE
         ELSE DROP TRUE 1 CELLS 0
