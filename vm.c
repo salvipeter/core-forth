@@ -69,8 +69,6 @@ int readline() {
     return FALSE;
   int len = strlen(&memory[get(TIB)]);
   set(TIBSIZE, len - 1);        /* -1 for omitting the newline char */
-  /* Undo cursor movement using a VT100 sequence, and write a space */
-  printf("[1A[%dC", len);
   return TRUE;
 }
 
@@ -403,7 +401,6 @@ int main(int argc, char **argv) {
         break;
       }
     }
-    printf(" ok\n");
 #ifdef DEBUG
     printf("[%d] Stack:", (get(TIB) - get(RSP)) / CELL_SIZE);
     for (int i = depth() - 1; i >= 0; --i)

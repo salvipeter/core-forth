@@ -39,3 +39,4 @@
   REPEAT DROP ." ;" R> 1 = IF ."  IMMEDIATE" THEN CR ;
 
 .( [2J[0;0HWelcome to Core Forth!)
+1 VERBOSITY!

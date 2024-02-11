@@ -117,7 +117,7 @@
 : RECURSE 10 CELLS @ >BODY , ; IMMEDIATE
 
 : ?DUP DUP IF DUP THEN ;
-: DEPTH 8 CELLS @ 7 CELLS @ - 1 CELLS / 2 - ;
+: DEPTH 8 CELLS @ 7 CELLS @ - 1 CELLS / 2 - 1- ;
 : PICK DUP 0= IF DROP DUP EXIT THEN SWAP >R 1- RECURSE R> SWAP ;
 : ROLL DUP 0= IF DROP EXIT THEN SWAP >R 1- RECURSE R> SWAP ;
 
@@ -317,17 +317,18 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
 
 \ Create a header for :NONAME as well (for RECURSE to work)
 : :NONAME HERE 10 CELLS ! 0 , 0 , TRUE STATE ! FALSE ; \ FALSE on the stack
-: ; POSTPONE EXIT 10 CELLS @ SWAP \ colon-sys a-addr
-    IF 1 CELLS ! ELSE >BODY THEN FALSE STATE ! ; IMMEDIATE
+: ; POSTPONE EXIT 10 CELLS @ SWAP \ a-addr colon-sys
+    IF 1 CELLS 2DUP @ SWAP ! ! ELSE >BODY THEN FALSE STATE ! ; IMMEDIATE
 TRUE \ Leave a true here, because the VM implementation of : does not
 : : HERE 10 CELLS ! 1 CELLS @ , PARSE-NAME DUP C, >R     \ c-addr ; R: u
          HERE R@ MOVE R> ALLOT ALIGN TRUE STATE ! TRUE ; \ TRUE on the stack
 
-1 17 CELLS !
+0 17 CELLS !
 DEFER ABORT
 : ABORT" POSTPONE ?DUP POSTPONE IF
          POSTPONE ." POSTPONE ABORT POSTPONE THEN ; IMMEDIATE
-: QUIT 4 CELLS @ 3 CELLS ! FALSE STATE ! FALSE 13 CELLS !
+: QUIT \ 4 CELLS @ CELL+ BEGIN DUP 3 CELLS @ <> WHILE R> DROP REPEAT \ ehh...
+       FALSE STATE ! FALSE 11 CELLS !
        BEGIN REFILL DROP
              BEGIN
                SOURCE NIP >IN @ <> WHILE
@@ -343,17 +344,14 @@ DEFER ABORT
                          THEN
                    ELSE DROP THEN
              REPEAT
-             17 CELL @ CASE
-               0 OF ENDOF
-               1 OF ." ok" ENDOF
+             17 CELLS @ CASE
+               1 OF ."  ok" CR ENDOF
                2 OF [CHAR] < EMIT BL EMIT
                     DEPTH 0 ?DO DEPTH I - 1- PICK . BL EMIT LOOP
-                    [CHAR] > EMIT ENDOF
-             ENDCASE CR
+                    [CHAR] > EMIT CR ENDOF
+             ENDCASE
        AGAIN ;
 :NONAME 8 CELLS @ 7 CELLS ! QUIT ; IS ABORT
-
-: test S" 1 1 +" EVALUATE . ;
 
 QUIT \ Start the interpreter
 
@@ -371,3 +369,9 @@ QUIT \ Start the interpreter
 \ |  18  | (not used)                                      |
 \ |  19  | (not used)                                      |
 \ |------|-------------------------------------------------|
+
+\ todo:
+\ - : test S" 1 1 +" EVALUATE . ;
+\ - leading spaces in ."  ok" etc. (WORD problem?)
+\ - VM cleanup
+\ - bugfixes
