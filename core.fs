@@ -44,8 +44,6 @@
 : = - 0= ;
 : <> = INVERT ;
 : 0<> 0= INVERT ;
-: < - 0< ;
-: > - 0> ;
 
 : C@ @ 255 AND ;
 : C! DUP @ 255 INVERT AND ROT + SWAP ! ;
@@ -86,10 +84,6 @@
 : LOOP R> R> BEGIN DUP 0<> WHILE 1- R> [ 8 CELLS JUMP! ] REPEAT
        DROP >R LIT@ R> , LIT@ R> , LIT@ 1+ , LIT@ 2DUP , LIT@ = ,
        LIT@ ?JUMP , HERE - , LIT@ 2DROP , ; IMMEDIATE
-: +LOOP R> R> BEGIN DUP 0<> WHILE 1- R> [ 10 CELLS JUMP! ] REPEAT
-        DROP >R LIT@ R> , LIT@ R> ,
-        LIT@ ROT , LIT@ + , LIT@ 2DUP , LIT@ > , LIT@ INVERT ,
-        LIT@ ?JUMP , HERE - , LIT@ 2DROP , ; IMMEDIATE
 : I R> R> R@ SWAP >R SWAP >R ;
 : J R> R> R> R> R@ SWAP >R SWAP >R SWAP >R SWAP >R ;
 
@@ -98,6 +92,8 @@
 : ENDOF LIT@ JUMP , HERE 0 , SWAP [ 0 JUMP! ] SWAP 1+ ; IMMEDIATE
 : ENDCASE LIT@ DROP , 0 ?DO [ 0 JUMP! ] LOOP ; IMMEDIATE
 
+: < 2DUP 0< >R 0< >R - 0< R> R> IF AND ELSE OR THEN ;
+: > SWAP < ;
 : ABS DUP 0< IF NEGATE THEN ;
 : MIN 2DUP > IF SWAP THEN DROP ;
 : MAX 2DUP < IF SWAP THEN DROP ;
@@ -110,6 +106,11 @@
 : /MOD >R S>D R> SM/REM ;
 : / /MOD NIP ;
 : MOD /MOD DROP ;
+
+: +LOOP R> R> BEGIN DUP 0<> WHILE 1- R> [ 10 CELLS JUMP! ] REPEAT
+        DROP >R LIT@ R> , LIT@ R> ,
+        LIT@ ROT , LIT@ + , LIT@ 2DUP , LIT@ > , LIT@ INVERT ,
+        LIT@ ?JUMP , HERE - , LIT@ 2DROP , ; IMMEDIATE
 
 : ALIGNED DUP 1 CELLS MOD DUP IF - CELL+ ELSE DROP THEN ;
 : ALIGN HERE DUP ALIGNED SWAP - ALLOT ;
@@ -237,11 +238,11 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
 : U< 2DUP * 0= IF 0<> NIP ELSE 2DUP 0< SWAP 0< XOR IF DROP 0> ELSE < THEN THEN ;
 : U> SWAP U< ;
 
-: 2* 2 * ;
-: 2/ DUP 0< IF 1- THEN 2 / ; \ signed right shift
+: 2* 2 UM* DROP ;
 : LSHIFT 0 ?DO 2* LOOP ;
 1 8 CELLS 1- LSHIFT 15 CELLS !
-: RSHIFT 0 ?DO 2/ 15 CELLS @ INVERT AND LOOP ;
+: 2/ DUP 0 2 UM/MOD NIP SWAP 0< IF 15 CELLS @ OR THEN ; \ signed right shift
+: RSHIFT 0 ?DO 0 2 UM/MOD NIP LOOP ;
 
 : >NUMBER ( ud1 c-addr1 u1 -- ud2 c-addr2 u2 )
   DUP 0= IF EXIT THEN OVER C@
@@ -334,8 +335,8 @@ DEFER ABORT
              BEGIN
                SOURCE NIP >IN @ > WHILE
                BL WORD DUP C@
-               0<> IF >R 0 0 R@ COUNT OVER C@ [CHAR] -
-                      = IF -1 >R 1- SWAP 1+ SWAP ELSE 1 >R THEN >NUMBER
+               0<> IF >R 0 0 R@ COUNT OVER C@ [CHAR] - = OVER 1 > AND
+                      IF -1 >R 1- SWAP 1+ SWAP ELSE 1 >R THEN >NUMBER
                       0= IF 2DROP R> * R> DROP               \ it's a number!
                             STATE @ IF POSTPONE LITERAL THEN
                          ELSE DROP 2DROP R> DROP R@ FIND     \ it's a word!
