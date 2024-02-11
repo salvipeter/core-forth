@@ -66,7 +66,7 @@ ucell to_body(ucell entry) {
 
 int readline() {
   if (!fgets(&memory[get(TIB)], TIB_SIZE * CELL_SIZE, stdin))
-    return FALSE;
+    exit(0);
   int len = strlen(&memory[get(TIB)]);
   set(TIBSIZE, len - 1);        /* -1 for omitting the newline char */
   return TRUE;
@@ -187,8 +187,7 @@ int fn_key(void) {
 }
 
 int fn_readline(void) {
-  if (!readline())
-    return FALSE;
+  readline();
   set(IN, 0);
   return TRUE;
 }
@@ -363,8 +362,7 @@ int main(int argc, char **argv) {
 
   /* Interpreter loop */
   while (TRUE) {
-    if (!readline())
-      break;
+    readline();
     set(IN, 0);
     while (TRUE) {
       char word[32];
