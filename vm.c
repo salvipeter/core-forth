@@ -209,10 +209,10 @@ int fn_emit(void) {
 int fn_colon(void) {
   char name[32];
   int pos;
-  if (sscanf(&memory[get(TIB)] + get(IN), "%s %n", name, &pos) != 1) {
+  if (sscanf(&memory[get(TIB)] + get(IN), "%s%n", name, &pos) != 1) {
     return FALSE;
   }
-  set(IN, get(IN) + pos);
+  set(IN, get(IN) + pos + 1);
 
   ucell start = get(HERE), here = start, dict = get(DICT);
   int size = strlen(name);
@@ -369,9 +369,9 @@ int main(int argc, char **argv) {
     while (TRUE) {
       char word[32];
       int pos;
-      if (sscanf(&memory[get(TIB)] + get(IN), "%s %n", word, &pos) != 1)
+      if (sscanf(&memory[get(TIB)] + get(IN), "%s%n", word, &pos) != 1)
         break;
-      set(IN, get(IN) + pos);
+      set(IN, get(IN) + pos + 1);
       cell number;
       if (parse_number(word, 10, &number)) {
         /* Number */

@@ -117,7 +117,7 @@
 : RECURSE 10 CELLS @ >BODY , ; IMMEDIATE
 
 : ?DUP DUP IF DUP THEN ;
-: DEPTH 8 CELLS @ 7 CELLS @ - 1 CELLS / 2 - 1- ;
+: DEPTH 8 CELLS @ 7 CELLS @ - 1 CELLS / 2 - ;
 : PICK DUP 0= IF DROP DUP EXIT THEN SWAP >R 1- RECURSE R> SWAP ;
 : ROLL DUP 0= IF DROP EXIT THEN SWAP >R 1- RECURSE R> SWAP ;
 
@@ -326,21 +326,21 @@ TRUE \ Leave a true here, because the VM implementation of : does not
 0 17 CELLS !
 DEFER ABORT
 : ABORT" POSTPONE ?DUP POSTPONE IF
-         POSTPONE ." POSTPONE ABORT POSTPONE THEN ; IMMEDIATE
-: QUIT \ 4 CELLS @ CELL+ BEGIN DUP 3 CELLS @ <> WHILE R> DROP REPEAT \ ehh...
+         POSTPONE ." POSTPONE CR POSTPONE ABORT POSTPONE THEN ; IMMEDIATE
+: QUIT 0 >R [ HERE 18 CELLS + ] LITERAL       \ address of after the next line
+       4 CELLS @ -1 CELLS + DUP ROT ROT ! 3 CELLS ! \ clears the control stack
        FALSE STATE ! FALSE 11 CELLS !
        BEGIN REFILL DROP
              BEGIN
                SOURCE NIP >IN @ <> WHILE
                BL WORD DUP C@
-               0<> IF >R 0 0 R@ COUNT >NUMBER
-                      0= IF 2DROP R> DROP                    \ it's a number!
+               0<> IF >R 0 0 R@ COUNT OVER C@ [CHAR] -
+                      = IF -1 >R 1- SWAP 1+ SWAP ELSE 1 >R THEN >NUMBER
+                      0= IF 2DROP R> * R> DROP               \ it's a number!
                             STATE @ IF POSTPONE LITERAL THEN
-                         ELSE DROP 2DROP R> FIND DUP         \ it's a word!
-                              0= IF ABORT" word not found"
-                                 ELSE 0< STATE @ AND
-                                      IF , ELSE EXECUTE THEN
-                                 THEN
+                         ELSE DROP 2DROP R> DROP R> FIND     \ it's a word!
+                              DUP 0= ABORT"  word not found"
+                              0< STATE @ AND IF , ELSE EXECUTE THEN
                          THEN
                    ELSE DROP THEN
              REPEAT
@@ -351,9 +351,14 @@ DEFER ABORT
                     [CHAR] > EMIT CR ENDOF
              ENDCASE
        AGAIN ;
+
 :NONAME 8 CELLS @ 7 CELLS ! QUIT ; IS ABORT
 
 QUIT \ Start the interpreter
+
+\ Note that using this interpreter is much slower.
+\ Unless functions such as EVALUATE or radix input is needed,
+\ it may be better to stick to the VM's interpreter.
 
 \ Finally, an overview of the system variables defined here:
 \ |------|-------------------------------------------------|
@@ -372,6 +377,6 @@ QUIT \ Start the interpreter
 
 \ todo:
 \ - : test S" 1 1 +" EVALUATE . ;
-\ - leading spaces in ."  ok" etc. (WORD problem?)
+\ - .S problem
+\ - negative increment in +LOOP
 \ - VM cleanup
-\ - bugfixes

@@ -6,7 +6,7 @@
   [CHAR] > EMIT ;
 
 : FIND-HEADER ( xt -- c-addr )
-  >R 1 CELLS @ BEGIN DUP R@ > WHILE @ REPEAT R> DROP ;
+  DUP 0> IF >R 1 CELLS @ BEGIN DUP R@ > WHILE @ REPEAT R> DROP THEN ;
 
 : FORGET-NAME ( "<spaces>name" -- )
   ' FIND-HEADER CELL+ 0 SWAP C! ;
