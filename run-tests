@@ -1,0 +1,2 @@
+#!/bin/bash
+cat core.fs test/prelimtest.fth test/tester.fr test/core.fr - | ./vm

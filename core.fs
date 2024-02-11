@@ -332,14 +332,16 @@ DEFER ABORT
        FALSE STATE ! FALSE 11 CELLS !
        BEGIN REFILL DROP
              BEGIN
-               SOURCE NIP >IN @ <> WHILE
+               SOURCE NIP >IN @ > WHILE
                BL WORD DUP C@
                0<> IF >R 0 0 R@ COUNT OVER C@ [CHAR] -
                       = IF -1 >R 1- SWAP 1+ SWAP ELSE 1 >R THEN >NUMBER
                       0= IF 2DROP R> * R> DROP               \ it's a number!
                             STATE @ IF POSTPONE LITERAL THEN
-                         ELSE DROP 2DROP R> DROP R> FIND     \ it's a word!
-                              DUP 0= ABORT"  word not found"
+                         ELSE DROP 2DROP R> DROP R@ FIND     \ it's a word!
+                              DUP 0= IF [CHAR] ' EMIT R> COUNT TYPE
+                                        [CHAR] ' EMIT ."  not found" ABORT
+                                     ELSE R> DROP THEN
                               0< STATE @ AND IF , ELSE EXECUTE THEN
                          THEN
                    ELSE DROP THEN
