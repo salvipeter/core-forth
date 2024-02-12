@@ -158,10 +158,10 @@ FALSE 11 CELLS !
 
 \ WORD below uses a scratch region that starts at the end of user memory;
 \ we should leave room for that, as well as for a padding region.
-\ 200 bytes each should suffice.
+\ Around 200 bytes each should suffice.
 
-2 CELLS @ 200 - CONSTANT PAD
-PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
+2 CELLS @ 200 ALIGNED - CONSTANT PAD
+PAD 200 ALIGNED - 2 CELLS !           \ User memory ends where scratch begins
 
 : BL 32 ;
 : CR 10 EMIT ;
