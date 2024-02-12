@@ -23,6 +23,24 @@ and wanted to know if these ideas hold even in a full system.
 While I had to make some concessions (like adding the words `UM*` and `UM/MOD`
 as basic words), I am quite content with the results.
 
+That said, this is a doubly inefficient implementation:
+
+1. It is interpreted (not compiled)
+
+1. Even its interpreter is interpreted (not native)
+
+The latter is because I wanted to show that even the interpreter can
+be written in Forth itself; it also helps keeping the virtual machine
+to a minimum (its interpreter only understands decimal numbers, and
+does not handle string sources given by `EVALUATE`).
+
+As for the former, it shouldn't be too hard to change it to a
+compiler: a new basic word like `MEM ( addr -- real-addr )` would be
+needed to map relative addresses to real addresses, and some `,`s
+would need to be changed to `COMPILE,`s, which, in turn, should be
+defined appropriately. An even more efficient implementation would
+use the hardware stack, which could be done by changing a few words.
+
 ## Credits
 
 Based on [milliForth](https://github.com/fuzzballcat/milliForth),

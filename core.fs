@@ -359,10 +359,6 @@ DEFER ABORT
 
 QUIT \ Start the interpreter
 
-\ Note that using this interpreter is much slower.
-\ Unless functions such as EVALUATE or radix input is needed,
-\ it may be better to stick to the VM's interpreter.
-
 \ Finally, an overview of the system variables defined here:
 \ |------|-------------------------------------------------|
 \ | Cell | Purpose                                         |
