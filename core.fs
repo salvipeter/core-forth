@@ -198,16 +198,6 @@ PAD 200 ALIGNED - 2 CELLS !           \ User memory ends where scratch begins
 : [COMPILE] ' , ; IMMEDIATE
 : POSTPONE BL WORD FIND 1 = IF , ELSE LIT@ LIT@ , , LIT@ , , THEN ; IMMEDIATE
 
-\ This is now easier with POSTPONE
-: +LOOP R> R> BEGIN DUP 0<> WHILE 1- R> [ 16 CELLS JUMP! ] REPEAT DROP >R
-        \ ] R> R> 2DUP > >R ROT + 2DUP > R>
-        \ [ POSTPONE IF ] INVERT [ POSTPONE THEN ]
-        \ ?JUMP [ HERE - , ] 2DROP [ ; IMMEDIATE
-        POSTPONE R>   POSTPONE R>    POSTPONE 2DUP POSTPONE >
-        POSTPONE >R   POSTPONE ROT   POSTPONE +    POSTPONE 2DUP
-        POSTPONE >    POSTPONE R>    POSTPONE IF   POSTPONE INVERT
-        POSTPONE THEN POSTPONE ?JUMP    HERE - ,   POSTPONE 2DROP ; IMMEDIATE
-
 : PARSE ( char "ccc<char>" -- c-addr u )
   >IN @ SWAP OVER SOURCE ROT ?DO          \ >in char c-addr
     1 >IN +! 2DUP I + C@ = IF LEAVE THEN
@@ -250,6 +240,22 @@ PAD 200 ALIGNED - 2 CELLS !           \ User memory ends where scratch begins
 1 8 CELLS 1- LSHIFT 15 CELLS !
 : 2/ DUP 0 2 UM/MOD NIP SWAP 0< IF 15 CELLS @ OR THEN ; \ signed right shift
 : RSHIFT 0 ?DO 0 2 UM/MOD NIP LOOP ;
+
+\ This is very complicated, because it needs to work for both
+\ signed and unsigned parameters.
+\ From a discussion at forth-standard.com:
+\   [..] compute x=(index-limit)+minint, and observe if the addition x+n
+\        crosses the boundary between minint and maxint.
+\ Note that minint is now stored in cell 15, and maxint = minint - 1.
+: +LOOP R> R> BEGIN DUP 0<> WHILE 1- R> [ 29 CELLS JUMP! ] REPEAT DROP >R
+        POSTPONE    R> POSTPONE   R> POSTPONE   ROT    POSTPONE     >R
+        POSTPONE  2DUP POSTPONE SWAP POSTPONE     - 15 POSTPONE LITERAL
+        POSTPONE CELLS POSTPONE    @ POSTPONE     +    POSTPONE    DUP
+        POSTPONE   DUP POSTPONE   R@ POSTPONE     +    POSTPONE    XOR
+        POSTPONE    0< POSTPONE SWAP POSTPONE    R@    POSTPONE    XOR
+        POSTPONE    0> POSTPONE  AND POSTPONE  SWAP    POSTPONE     R>
+        POSTPONE     + POSTPONE SWAP POSTPONE ?JUMP        HERE - ,
+        POSTPONE 2DROP ; IMMEDIATE
 
 : >NUMBER ( ud1 c-addr1 u1 -- ud2 c-addr2 u2 )
   DUP 0= IF EXIT THEN OVER C@
