@@ -122,21 +122,7 @@
 : ERASE 0 FILL ;
 : UNUSED 2 CELLS @ HERE - ;
 
-: CREATE : LIT@ LIT@ , HERE 2 CELLS + ,
-         LIT@ EXIT , 10 CELLS @ 1 CELLS ! FALSE STATE ! ;
-: >BODY 3 CELLS + ;
-: DOES> LIT@ LIT@ ,          1 , LIT@ CELLS , LIT@     @ , LIT@ NAME>INTERPRET ,
-        LIT@ LIT@ , LIT@  JUMP , LIT@  OVER , LIT@     ! , LIT@ CELL+ ,
-        LIT@ HERE , LIT@  OVER , LIT@     - , LIT@  OVER , LIT@     ! ,
-        LIT@ LIT@ ,          2 , LIT@ CELLS , LIT@     + , LIT@  LIT@ ,
-        LIT@ LIT@ , LIT@     , , LIT@     , , LIT@  LIT@ , LIT@  JUMP ,
-        LIT@    , , LIT@  LIT@ ,     HERE 5 CELLS + ,      LIT@  HERE ,
-        LIT@    - , LIT@     , , LIT@  EXIT , ; IMMEDIATE
-: VARIABLE CREATE 0 , ;
-: CONSTANT CREATE , DOES> @ ;
-: BUFFER: CREATE ALLOT ;
-
-VARIABLE BASE
+: BASE 18 CELLS ;
 : DECIMAL 10 BASE ! ;
 : HEX 16 BASE ! ;
 DECIMAL
@@ -156,7 +142,7 @@ FALSE 11 CELLS !
 \ we should leave room for that, as well as for a padding region.
 \ Around 200 bytes each should suffice.
 
-2 CELLS @ 200 ALIGNED - CONSTANT PAD
+: PAD [ 2 CELLS @ 200 ALIGNED - ] LITERAL ;
 PAD 200 ALIGNED - 2 CELLS !           \ User memory ends where scratch begins
 
 : BL 32 ;
@@ -316,6 +302,27 @@ PAD 200 ALIGNED - 2 CELLS !           \ User memory ends where scratch begins
 
 : ENVIRONMENT? 2DROP FALSE ;
 
+\ Create a header for :NONAME as well (for RECURSE to work)
+: :NONAME HERE 10 CELLS ! 0 , 0 , TRUE STATE ! FALSE ; \ FALSE on the stack
+: ; POSTPONE EXIT 10 CELLS @ SWAP \ a-addr colon-sys
+  IF 1 CELLS 2DUP @ SWAP ! ! ELSE NAME>INTERPRET THEN FALSE STATE ! ; IMMEDIATE
+TRUE \ Leave a true here, because the VM implementation of : does not
+: : HERE 10 CELLS ! 1 CELLS @ , PARSE-NAME DUP C, >R     \ c-addr ; R: u
+         HERE R@ MOVE R> ALLOT ALIGN TRUE STATE ! TRUE ; \ TRUE on the stack
+
+: CREATE : LIT@ LIT@ , HERE 2 CELLS + ,
+         LIT@ EXIT , 10 CELLS @ 1 CELLS ! FALSE STATE ! ;
+: >BODY 3 CELLS + ;
+: DOES> LIT@ LIT@ ,          1 , LIT@ CELLS , LIT@     @ , LIT@ NAME>INTERPRET ,
+        LIT@ LIT@ , LIT@  JUMP , LIT@  OVER , LIT@     ! , LIT@ CELL+ ,
+        LIT@ HERE , LIT@  OVER , LIT@     - , LIT@  OVER , LIT@     ! ,
+        LIT@ LIT@ ,          2 , LIT@ CELLS , LIT@     + , LIT@  LIT@ ,
+        LIT@ LIT@ , LIT@     , , LIT@     , , LIT@  LIT@ , LIT@  JUMP ,
+        LIT@    , , LIT@  LIT@ ,     HERE 5 CELLS + ,      LIT@  HERE ,
+        LIT@    - , LIT@     , , LIT@  EXIT , ; IMMEDIATE
+: VARIABLE CREATE 0 , ;
+: CONSTANT CREATE , DOES> @ ;
+: BUFFER: CREATE ALLOT ;
 : MARKER CREATE 1 CELLS @ @ , DOES> @ 1 CELLS ! ;
 
 : DEFER CREATE 0 , DOES> @ EXECUTE ;
@@ -329,14 +336,6 @@ PAD 200 ALIGNED - 2 CELLS !           \ User memory ends where scratch begins
 : VALUE CREATE , DOES> @ ;
 : TO STATE @ IF ( compilation ) ' 3 CELLS + POSTPONE LITERAL POSTPONE !
      ELSE ( interpretation ) ' 3 CELLS + ! THEN ; IMMEDIATE
-
-\ Create a header for :NONAME as well (for RECURSE to work)
-: :NONAME HERE 10 CELLS ! 0 , 0 , TRUE STATE ! FALSE ; \ FALSE on the stack
-: ; POSTPONE EXIT 10 CELLS @ SWAP \ a-addr colon-sys
-  IF 1 CELLS 2DUP @ SWAP ! ! ELSE NAME>INTERPRET THEN FALSE STATE ! ; IMMEDIATE
-TRUE \ Leave a true here, because the VM implementation of : does not
-: : HERE 10 CELLS ! 1 CELLS @ , PARSE-NAME DUP C, >R     \ c-addr ; R: u
-         HERE R@ MOVE R> ALLOT ALIGN TRUE STATE ! TRUE ; \ TRUE on the stack
 
 0 17 CELLS !
 DEFER ABORT
@@ -355,7 +354,7 @@ DEFER ABORT
                             STATE @ IF POSTPONE LITERAL THEN
                          ELSE DROP 2DROP R> DROP R@ FIND     \ it's a word!
                               DUP 0= IF [CHAR] ' EMIT R> COUNT TYPE
-                                        [CHAR] ' EMIT ."  not found" ABORT
+                                        [CHAR] ' EMIT ."  not found" CR ABORT
                                      ELSE R> DROP THEN
                               0< STATE @ AND IF , ELSE EXECUTE THEN
                          THEN
@@ -384,7 +383,7 @@ QUIT \ Start the interpreter
 \ |  15  | highest bit in a cell = 2^(n-1)                 |
 \ |  16  | start address of number image                   |
 \ |  17  | verbosity (0: quiet, 1: ok, 2: stack)           |
-\ |  18  | (not used)                                      |
+\ |  18  | radix base                                      |
 \ |  19  | (not used)                                      |
 \ |------|-------------------------------------------------|
 
