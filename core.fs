@@ -109,8 +109,8 @@
 
 : ALIGNED DUP 1 CELLS MOD DUP IF - CELL+ ELSE DROP THEN ;
 : ALIGN HERE DUP ALIGNED SWAP - ALLOT ;
-: >BODY CELL+ DUP @ 31 AND + 1+ ALIGNED ;
-: RECURSE 10 CELLS @ >BODY , ; IMMEDIATE
+: NAME>INTERPRET CELL+ DUP @ 31 AND + 1+ ALIGNED ;
+: RECURSE 10 CELLS @ NAME>INTERPRET , ; IMMEDIATE
 
 : ?DUP DUP IF DUP THEN ;
 : DEPTH 8 CELLS @ 7 CELLS @ - 1 CELLS / 2 - ;
@@ -124,13 +124,14 @@
 
 : CREATE : LIT@ LIT@ , HERE 2 CELLS + ,
          LIT@ EXIT , 10 CELLS @ 1 CELLS ! FALSE STATE ! ;
-: DOES> LIT@ LIT@ ,           1 ,  LIT@ CELLS ,  LIT@     @ ,  LIT@ >BODY ,
-        LIT@ LIT@ ,  LIT@  JUMP ,  LIT@  OVER ,  LIT@     ! ,  LIT@ CELL+ ,
-        LIT@ HERE ,  LIT@  OVER ,  LIT@     - ,  LIT@  OVER ,  LIT@     ! ,
-        LIT@ LIT@ ,           2 ,  LIT@ CELLS ,  LIT@     + ,  LIT@  LIT@ ,
-        LIT@ LIT@ ,  LIT@     , ,  LIT@     , ,  LIT@  LIT@ ,  LIT@  JUMP ,
-        LIT@    , ,  LIT@  LIT@ ,       HERE 5 CELLS + ,       LIT@  HERE ,
-        LIT@    - ,  LIT@     , ,  LIT@  EXIT , ; IMMEDIATE
+: >BODY 3 CELLS + ;
+: DOES> LIT@ LIT@ ,          1 , LIT@ CELLS , LIT@     @ , LIT@ NAME>INTERPRET ,
+        LIT@ LIT@ , LIT@  JUMP , LIT@  OVER , LIT@     ! , LIT@ CELL+ ,
+        LIT@ HERE , LIT@  OVER , LIT@     - , LIT@  OVER , LIT@     ! ,
+        LIT@ LIT@ ,          2 , LIT@ CELLS , LIT@     + , LIT@  LIT@ ,
+        LIT@ LIT@ , LIT@     , , LIT@     , , LIT@  LIT@ , LIT@  JUMP ,
+        LIT@    , , LIT@  LIT@ ,     HERE 5 CELLS + ,      LIT@  HERE ,
+        LIT@    - , LIT@     , , LIT@  EXIT , ; IMMEDIATE
 : VARIABLE CREATE 0 , ;
 : CONSTANT CREATE , DOES> @ ;
 : BUFFER: CREATE ALLOT ;
@@ -191,7 +192,7 @@ PAD 200 ALIGNED - 2 CELLS !           \ User memory ends where scratch begins
          DUP 0= IF R> SWAP EXIT THEN
          DUP CELL+ DUP 1+ SWAP C@ 31 AND R@ COUNT COMPARE WHILE @
        REPEAT
-       R> DROP DUP >BODY SWAP CELL+ C@ 128 AND 0= IF -1 ELSE 1 THEN ;
+       R> DROP DUP NAME>INTERPRET SWAP CELL+ C@ 128 AND 0= IF -1 ELSE 1 THEN ;
 : ' BL WORD FIND DROP ;
 : ['] LIT@ LIT@ , ' , ; IMMEDIATE
 : EXECUTE >R ;
@@ -332,7 +333,7 @@ PAD 200 ALIGNED - 2 CELLS !           \ User memory ends where scratch begins
 \ Create a header for :NONAME as well (for RECURSE to work)
 : :NONAME HERE 10 CELLS ! 0 , 0 , TRUE STATE ! FALSE ; \ FALSE on the stack
 : ; POSTPONE EXIT 10 CELLS @ SWAP \ a-addr colon-sys
-    IF 1 CELLS 2DUP @ SWAP ! ! ELSE >BODY THEN FALSE STATE ! ; IMMEDIATE
+  IF 1 CELLS 2DUP @ SWAP ! ! ELSE NAME>INTERPRET THEN FALSE STATE ! ; IMMEDIATE
 TRUE \ Leave a true here, because the VM implementation of : does not
 : : HERE 10 CELLS ! 1 CELLS @ , PARSE-NAME DUP C, >R     \ c-addr ; R: u
          HERE R@ MOVE R> ALLOT ALIGN TRUE STATE ! TRUE ; \ TRUE on the stack

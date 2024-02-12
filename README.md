@@ -66,6 +66,8 @@ The following words are not part of the *core* and *core extension* datasets:
 - `JUMP! ( offset -- )` compiles the computation and storing of the current relative address
   plus the given offset (storage address is given on the data stack in runtime)
 - `LIT@ ( -- x )` loads the next cell onto the data stack and jumps over it
+- `NAME>INTERPRET ( nt -- xt | 0 )` returns the interpretation semantics of the given name tag
+   (part of the *tools extension* wordset); this implementation never returns `0`
 - `NAND ( x1 x2 -- x3 )` is the bitwise NAND operation
 - `READ-LINE ( -- )` reads a line from the standard input to the text input buffer
 
