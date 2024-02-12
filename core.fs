@@ -107,11 +107,6 @@
 : / /MOD NIP ;
 : MOD /MOD DROP ;
 
-: +LOOP R> R> BEGIN DUP 0<> WHILE 1- R> [ 10 CELLS JUMP! ] REPEAT
-        DROP >R LIT@ R> , LIT@ R> ,
-        LIT@ ROT , LIT@ + , LIT@ 2DUP , LIT@ > , LIT@ INVERT ,
-        LIT@ ?JUMP , HERE - , LIT@ 2DROP , ; IMMEDIATE
-
 : ALIGNED DUP 1 CELLS MOD DUP IF - CELL+ ELSE DROP THEN ;
 : ALIGN HERE DUP ALIGNED SWAP - ALLOT ;
 : >BODY CELL+ DUP @ 31 AND + 1+ ALIGNED ;
@@ -202,6 +197,16 @@ PAD 200 ALIGNED - 2 CELLS !           \ User memory ends where scratch begins
 : EXECUTE >R ;
 : [COMPILE] ' , ; IMMEDIATE
 : POSTPONE BL WORD FIND 1 = IF , ELSE LIT@ LIT@ , , LIT@ , , THEN ; IMMEDIATE
+
+\ This is now easier with POSTPONE
+: +LOOP R> R> BEGIN DUP 0<> WHILE 1- R> [ 16 CELLS JUMP! ] REPEAT DROP >R
+        \ ] R> R> 2DUP > >R ROT + 2DUP > R>
+        \ [ POSTPONE IF ] INVERT [ POSTPONE THEN ]
+        \ ?JUMP [ HERE - , ] 2DROP [ ; IMMEDIATE
+        POSTPONE R>   POSTPONE R>    POSTPONE 2DUP POSTPONE >
+        POSTPONE >R   POSTPONE ROT   POSTPONE +    POSTPONE 2DUP
+        POSTPONE >    POSTPONE R>    POSTPONE IF   POSTPONE INVERT
+        POSTPONE THEN POSTPONE ?JUMP    HERE - ,   POSTPONE 2DROP ; IMMEDIATE
 
 : PARSE ( char "ccc<char>" -- c-addr u )
   >IN @ SWAP OVER SOURCE ROT ?DO          \ >in char c-addr
@@ -379,5 +384,4 @@ QUIT \ Start the interpreter
 \ todo:
 \ - : test S" 1 1 +" EVALUATE . ;
 \ - .S problem
-\ - negative increment in +LOOP
 \ - VM cleanup
