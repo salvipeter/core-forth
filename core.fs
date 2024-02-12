@@ -209,9 +209,11 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
   LOOP NIP OVER >R + >IN @ R> - 1- ;
 : PARSE-NAME ( "<spaces>name<space>" -- c-addr u )
   SOURCE >IN @ ?DO DUP I + C@ BL <> IF LEAVE THEN 1 >IN +! LOOP DROP
-  >IN @
-  SOURCE >IN @ ?DO 1 >IN +! DUP I + C@ BL = IF LEAVE THEN LOOP \ >in c-addr
-  OVER >R + >IN @ R> - 1- ;
+  >IN @ 0                                         \ >in correction
+  SOURCE >IN @ ?DO 1 >IN +! DUP I + C@ BL
+                   = IF SWAP 1- SWAP LEAVE THEN
+               LOOP                               \ >in correction c-addr
+  SWAP >R OVER >R + >IN @ R> - R> + ;
 
 : C" [CHAR] " PARSE                           \ c-addr u
      POSTPONE JUMP DUP 1+ ALIGNED DUP CELL+ , \ c-addr u offset
@@ -233,7 +235,7 @@ PAD 200 - 2 CELLS !           \ User memory ends where scratch begins
      DUP 0< IF NEGATE SWAP NEGATE SWAP THEN ROT UM* ROT \ |n1|*|n2| sign
      0< IF INVERT SWAP ?DUP 0= IF 1+ 0 ELSE NEGATE THEN SWAP THEN ;
 : * M* DROP ;
-: */MOD >R M* R> FM/MOD ;
+: */MOD >R M* R> SM/REM ;
 : */ */MOD NIP ;
 : U< 2DUP * 0= IF 0<> NIP ELSE 2DUP 0< SWAP 0< XOR IF DROP 0> ELSE < THEN THEN ;
 : U> SWAP U< ;
