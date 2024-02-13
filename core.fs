@@ -363,6 +363,7 @@ DEFER ABORT
                     DEPTH 0 ?DO DEPTH I - 1- PICK . BL EMIT LOOP
                     [CHAR] > EMIT CR ENDOF
              ENDCASE
+             11 CELLS @ IF FALSE 11 CELLS ! 12 CELLS @ >IN ! THEN
        AGAIN ;
 
 :NONAME 8 CELLS @ 7 CELLS ! QUIT ; IS ABORT
