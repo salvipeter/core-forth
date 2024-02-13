@@ -311,7 +311,7 @@ TRUE \ Leave a true here, because the VM implementation of : does not
          HERE R@ MOVE R> ALLOT ALIGN TRUE STATE ! TRUE ; \ TRUE on the stack
 
 : CREATE : LIT@ LIT@ , HERE 2 CELLS + ,
-         LIT@ EXIT , 10 CELLS @ 1 CELLS ! FALSE STATE ! ;
+         LIT@ EXIT , 10 CELLS @ 1 CELLS ! DROP FALSE STATE ! ;
 : >BODY 3 CELLS + ;
 : DOES> LIT@ LIT@ ,          1 , LIT@ CELLS , LIT@     @ , LIT@ NAME>INTERPRET ,
         LIT@ LIT@ , LIT@  JUMP , LIT@  OVER , LIT@     ! , LIT@ CELL+ ,
