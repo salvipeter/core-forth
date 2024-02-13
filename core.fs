@@ -310,16 +310,13 @@ TRUE \ Leave a true here, because the VM implementation of : does not
 : : HERE 10 CELLS ! 1 CELLS @ , PARSE-NAME DUP C, >R     \ c-addr ; R: u
          HERE R@ MOVE R> ALLOT ALIGN TRUE STATE ! TRUE ; \ TRUE on the stack
 
-: CREATE : LIT@ LIT@ , HERE 2 CELLS + ,
-         LIT@ EXIT , 10 CELLS @ 1 CELLS ! DROP FALSE STATE ! ;
-: >BODY 3 CELLS + ;
-: DOES> LIT@ LIT@ ,          1 , LIT@ CELLS , LIT@     @ , LIT@ NAME>INTERPRET ,
-        LIT@ LIT@ , LIT@  JUMP , LIT@  OVER , LIT@     ! , LIT@ CELL+ ,
-        LIT@ HERE , LIT@  OVER , LIT@     - , LIT@  OVER , LIT@     ! ,
-        LIT@ LIT@ ,          2 , LIT@ CELLS , LIT@     + , LIT@  LIT@ ,
-        LIT@ LIT@ , LIT@     , , LIT@     , , LIT@  LIT@ , LIT@  JUMP ,
-        LIT@    , , LIT@  LIT@ ,     HERE 5 CELLS + ,      LIT@  HERE ,
-        LIT@    - , LIT@     , , LIT@  EXIT , ; IMMEDIATE
+: CREATE : HERE 4 CELLS + POSTPONE LITERAL POSTPONE ; 0 , ;
+: >BODY 4 CELLS + ;
+: DOES> 1 POSTPONE LITERAL POSTPONE CELLS POSTPONE @ POSTPONE NAME>INTERPRET
+        2 POSTPONE LITERAL POSTPONE CELLS POSTPONE + [ ' JUMP ] LITERAL
+        POSTPONE LITERAL POSTPONE OVER POSTPONE ! POSTPONE CELL+ HERE 7 CELLS +
+        POSTPONE LITERAL POSTPONE OVER POSTPONE - POSTPONE SWAP POSTPONE !
+        POSTPONE EXIT ; IMMEDIATE
 : VARIABLE CREATE 0 , ;
 : CONSTANT CREATE , DOES> @ ;
 : BUFFER: CREATE ALLOT ;
