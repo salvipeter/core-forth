@@ -26,7 +26,7 @@
     BL EMIT
     DUP @ [ ' EXIT ] LITERAL <> WHILE
     DUP @ -15 = IF ." <LIT>" ELSE
-      DUP @ DUP FIND-HEADER SWAP OVER >BODY     \ body header xt? xt
+      DUP @ DUP FIND-HEADER SWAP OVER NAME>INTERPRET  \ body header xt? xt
       = IF CELL+ DUP 1+ SWAP @ 31 AND TYPE
         ELSE DROP TRUE 1 CELLS 0
              DO OVER I + C@ DUP 0= SWAP 32 126 WITHIN OR AND LOOP

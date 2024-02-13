@@ -386,5 +386,4 @@ QUIT \ Start the interpreter
 
 \ todo:
 \ - : test S" 1 1 +" EVALUATE . ;
-\ - .S problem
 \ - VM cleanup
