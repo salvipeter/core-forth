@@ -131,7 +131,6 @@ FALSE 11 CELLS !
 : SOURCE-ID 11 CELLS @ ;
 : SOURCE SOURCE-ID IF 13 CELLS @ 14 CELLS @ ELSE 4 CELLS @ 6 CELLS @ THEN ;
 : REFILL SOURCE-ID IF FALSE ELSE READ-LINE TRUE THEN ;
-: EVALUATE >IN @ 12 CELLS ! TRUE 11 CELLS ! 0 >IN ! 14 CELLS ! 13 CELLS ! ;
 : SAVE-INPUT >IN @ ;
 : RESTORE-INPUT SOURCE-ID IF >IN ! FALSE ELSE DROP TRUE THEN ;
 : \ SOURCE >IN ! DROP ; IMMEDIATE
@@ -334,40 +333,61 @@ TRUE \ Leave a true here, because the VM implementation of : does not
 : TO STATE @ IF ( compilation ) ' 3 CELLS + POSTPONE LITERAL POSTPONE !
      ELSE ( interpretation ) ' 3 CELLS + ! THEN ; IMMEDIATE
 
-0 17 CELLS !
 DEFER ABORT
 : ABORT" POSTPONE ?DUP POSTPONE IF
          POSTPONE ." POSTPONE CR POSTPONE ABORT POSTPONE THEN ; IMMEDIATE
+
+\ Except for the first line, this is the same as the inner loop in QUIT.
+\ It would look better as its own INTERPRET function,
+\ but then it would clutter up the control stack, causing errors.
+: EVALUATE >IN @ 12 CELLS ! TRUE 11 CELLS ! 0 >IN ! 14 CELLS ! 13 CELLS !
+           BEGIN
+             SOURCE NIP >IN @ > WHILE
+             BL WORD DUP C@
+             0<> IF >R 0 0 R@ COUNT OVER C@ [CHAR] - = OVER 1 > AND
+                    IF -1 >R 1- SWAP 1+ SWAP ELSE 1 >R THEN >NUMBER
+                    0= IF 2DROP R> * R> DROP               \ it's a number!
+                          STATE @ IF POSTPONE LITERAL THEN
+                       ELSE DROP 2DROP R> DROP R@ FIND     \ it's a word!
+                            DUP 0= IF [CHAR] ' EMIT R> COUNT TYPE
+                                      [CHAR] ' EMIT ."  not found" CR ABORT
+                                   ELSE R> DROP THEN
+                            0< STATE @ AND IF , ELSE EXECUTE THEN
+                       THEN
+                 ELSE DROP THEN
+           REPEAT ;
+
+0 17 CELLS !
 : QUIT 0 >R [ HERE 18 CELLS + ] LITERAL       \ address of after the next line
        4 CELLS @ -1 CELLS + DUP ROT ROT ! 3 CELLS ! \ clears the control stack
        FALSE STATE ! FALSE 11 CELLS ! REFILL DROP
        BEGIN
-             BEGIN
-               SOURCE NIP >IN @ > WHILE
-               BL WORD DUP C@
-               0<> IF >R 0 0 R@ COUNT OVER C@ [CHAR] - = OVER 1 > AND
-                      IF -1 >R 1- SWAP 1+ SWAP ELSE 1 >R THEN >NUMBER
-                      0= IF 2DROP R> * R> DROP               \ it's a number!
-                            STATE @ IF POSTPONE LITERAL THEN
-                         ELSE DROP 2DROP R> DROP R@ FIND     \ it's a word!
-                              DUP 0= IF [CHAR] ' EMIT R> COUNT TYPE
-                                        [CHAR] ' EMIT ."  not found" CR ABORT
-                                     ELSE R> DROP THEN
-                              0< STATE @ AND IF , ELSE EXECUTE THEN
-                         THEN
-                   ELSE DROP THEN
-             REPEAT
-             11 CELLS @ IF
-               FALSE 11 CELLS ! 12 CELLS @ >IN !
-             ELSE
-               17 CELLS @ CASE
-                 1 OF ."  ok" CR ENDOF
-                 2 OF [CHAR] < EMIT BL EMIT
-                      DEPTH 0 ?DO DEPTH I - 1- PICK . BL EMIT LOOP
-                      [CHAR] > EMIT CR ENDOF
-               ENDCASE
-               REFILL DROP
-             THEN
+         BEGIN
+           SOURCE NIP >IN @ > WHILE
+           BL WORD DUP C@
+           0<> IF >R 0 0 R@ COUNT OVER C@ [CHAR] - = OVER 1 > AND
+                  IF -1 >R 1- SWAP 1+ SWAP ELSE 1 >R THEN >NUMBER
+                  0= IF 2DROP R> * R> DROP               \ it's a number!
+                        STATE @ IF POSTPONE LITERAL THEN
+                     ELSE DROP 2DROP R> DROP R@ FIND     \ it's a word!
+                          DUP 0= IF [CHAR] ' EMIT R> COUNT TYPE
+                                    [CHAR] ' EMIT ."  not found" CR ABORT
+                                 ELSE R> DROP THEN
+                          0< STATE @ AND IF , ELSE EXECUTE THEN
+                     THEN
+               ELSE DROP THEN
+         REPEAT
+         11 CELLS @ IF
+           FALSE 11 CELLS ! 12 CELLS @ >IN !
+         ELSE
+           17 CELLS @ CASE
+             1 OF ."  ok" CR ENDOF
+             2 OF [CHAR] < EMIT BL EMIT
+                  DEPTH 0 ?DO DEPTH I - 1- PICK . BL EMIT LOOP
+                  [CHAR] > EMIT CR ENDOF
+           ENDCASE
+           REFILL DROP
+         THEN
        AGAIN ;
 
 :NONAME 8 CELLS @ 7 CELLS ! QUIT ; IS ABORT
