@@ -340,8 +340,8 @@ DEFER ABORT
          POSTPONE ." POSTPONE CR POSTPONE ABORT POSTPONE THEN ; IMMEDIATE
 : QUIT 0 >R [ HERE 18 CELLS + ] LITERAL       \ address of after the next line
        4 CELLS @ -1 CELLS + DUP ROT ROT ! 3 CELLS ! \ clears the control stack
-       FALSE STATE ! FALSE 11 CELLS !
-       BEGIN REFILL DROP
+       FALSE STATE ! FALSE 11 CELLS ! REFILL DROP
+       BEGIN
              BEGIN
                SOURCE NIP >IN @ > WHILE
                BL WORD DUP C@
@@ -357,13 +357,17 @@ DEFER ABORT
                          THEN
                    ELSE DROP THEN
              REPEAT
-             17 CELLS @ CASE
-               1 OF ."  ok" CR ENDOF
-               2 OF [CHAR] < EMIT BL EMIT
-                    DEPTH 0 ?DO DEPTH I - 1- PICK . BL EMIT LOOP
-                    [CHAR] > EMIT CR ENDOF
-             ENDCASE
-             11 CELLS @ IF FALSE 11 CELLS ! 12 CELLS @ >IN ! THEN
+             11 CELLS @ IF
+               FALSE 11 CELLS ! 12 CELLS @ >IN !
+             ELSE
+               17 CELLS @ CASE
+                 1 OF ."  ok" CR ENDOF
+                 2 OF [CHAR] < EMIT BL EMIT
+                      DEPTH 0 ?DO DEPTH I - 1- PICK . BL EMIT LOOP
+                      [CHAR] > EMIT CR ENDOF
+               ENDCASE
+               REFILL DROP
+             THEN
        AGAIN ;
 
 :NONAME 8 CELLS @ 7 CELLS ! QUIT ; IS ABORT
@@ -384,7 +388,3 @@ QUIT \ Start the interpreter
 \ |  18  | radix base                                      |
 \ |  19  | (not used)                                      |
 \ |------|-------------------------------------------------|
-
-\ todo:
-\ - : test S" 1 1 +" EVALUATE . ;
-\ - VM cleanup
