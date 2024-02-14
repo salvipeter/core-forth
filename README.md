@@ -69,7 +69,6 @@ The following words are not part of the *core* and *core extension* datasets:
 - `NAME>INTERPRET ( nt -- xt | 0 )` returns the interpretation semantics of the given name tag
    (part of the *tools extension* wordset); this implementation never returns `0`
 - `NAND ( x1 x2 -- x3 )` is the bitwise NAND operation
-- `READ-LINE ( -- )` reads a line from the standard input to the text input buffer
 
 An additional file (`utils.fs`) contains some standard utilities from the *tools* wordset:
 - `.S ( -- )`
@@ -117,12 +116,12 @@ The virtual machine also knows some basic operations:
 - `+ ( n1|u1 n2|u2 -- n3|u3 )`
 - `0< ( n -- flag )`
 - `@ ( a-addr -- x )`
+- `ACCEPT ( c-addr +n1 -- +n2 )`
 - `CELLS ( n1 -- n2 )`
 - `EMIT ( x -- )`
 - `EXIT ( -- ) ( R: nest-sys -- )`
 - `KEY ( -- char )` [currently not implemented in the VM]
 - `NAND ( x1 x2 -- x3 )`
-- `READ-LINE ( -- )`
 - `UM* ( u1 u2 -- ud )`
 - `UM/MOD ( ud u1 -- u2 u3 )`
 
@@ -149,7 +148,7 @@ and check the mixed-precision functions `fn_mult` and `fn_divmod`.
 The system is assumed to be little-endian, and endline character is 10 (line feed).
 
 The body of system words (i.e., one of
-`! + 0< : ; @ CELLS EMIT EXIT KEY NAND READ-LINE UM* UM/MOD`)
+`! + 0< : ; @ ACCEPT CELLS EMIT EXIT KEY NAND UM* UM/MOD`)
 is a single negative number (-1 for `!`, -2 for `+` etc. to -14 for `UM/MOD`).
 Literals are loaded by a special code (-15), but this is reimplemented later in `LIT@`.
 
@@ -163,3 +162,6 @@ and those for the *core extension* wordset by Gerry Jackson.
 
 Testing itself was an eye-opening experience. Who knew there could be so many bugs in my code?
 And there are still quite a few, I am sure, but at least now it passes all tests.
+
+One minor divergence is that since this implementation reads only from the standard input,
+the test for `ACCEPT` is not very meaningful.

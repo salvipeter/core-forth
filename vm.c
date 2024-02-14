@@ -186,9 +186,13 @@ int fn_key(void) {
   return TRUE;
 }
 
-int fn_readline(void) {
-  readline();
-  set(IN, 0);
+int fn_accept(void) {
+  ucell n = get(get(DSP)), addr = get(get(DSP) + CELL_SIZE);
+  if (!fgets(&memory[addr], n, stdin))
+    exit(0);
+  int len = strlen(&memory[addr]) - 1;
+  set(DSP, get(DSP) + CELL_SIZE);
+  set(get(DSP), len);
   return TRUE;
 }
 
@@ -242,8 +246,8 @@ int fn_semicolon(void) {
 typedef int(*sysfn)(void);
 sysfn sys_functions[] = {
   fn_set, fn_add, fn_less, fn_colon, fn_semicolon, fn_get,
-  fn_cells, fn_emit, NULL /* exit */, fn_key, fn_nand,
-  fn_readline, fn_mult, fn_divmod
+  fn_accept, fn_cells, fn_emit, NULL /* exit */, fn_key,
+  fn_nand, fn_mult, fn_divmod
 };
 
 void add_dict_entry(const char *name, int immediate, int code) {
@@ -274,7 +278,7 @@ int eval(ucell entry) {
     while (entry) {
       cell index = get(entry);
       if (index < 0) {
-        if (index == -9) {     /* EXIT */
+        if (index == -10) {     /* EXIT */
           entry = get(get(RSP) + CELL_SIZE);
           set(RSP, get(RSP) + 2 * CELL_SIZE);
         } else if (index == -15) { /* number literal */
@@ -351,12 +355,12 @@ int main(int argc, char **argv) {
   add_dict_entry(":",         FALSE,  -4);
   add_dict_entry(";",         TRUE,   -5);
   add_dict_entry("@",         FALSE,  -6);
-  add_dict_entry("CELLS",     FALSE,  -7);
-  add_dict_entry("EMIT",      FALSE,  -8);
-  add_dict_entry("EXIT",      FALSE,  -9);
-  add_dict_entry("KEY",       FALSE, -10);
-  add_dict_entry("NAND",      FALSE, -11);
-  add_dict_entry("READ-LINE", FALSE, -12);
+  add_dict_entry("ACCEPT",    FALSE,  -7);
+  add_dict_entry("CELLS",     FALSE,  -8);
+  add_dict_entry("EMIT",      FALSE,  -9);
+  add_dict_entry("EXIT",      FALSE, -10);
+  add_dict_entry("KEY",       FALSE, -11);
+  add_dict_entry("NAND",      FALSE, -12);
   add_dict_entry("UM*",       FALSE, -13);
   add_dict_entry("UM/MOD",    FALSE, -14);
 
