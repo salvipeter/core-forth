@@ -246,8 +246,8 @@ PAD 200 ALIGNED - 2 CELLS !           \ User memory ends where scratch begins
 : >NUMBER ( ud1 c-addr1 u1 -- ud2 c-addr2 u2 )
   DUP 0= IF EXIT THEN OVER C@
   DUP [CHAR] 0 [CHAR] 9 1+ WITHIN IF [CHAR] 0 - ELSE
-  DUP [CHAR] A [CHAR] Z    WITHIN IF [CHAR] A - 10 + ELSE
-  DUP [CHAR] a [CHAR] z    WITHIN IF [CHAR] a - 10 + ELSE
+  DUP [CHAR] A [CHAR] Z 1+ WITHIN IF [CHAR] A - 10 + ELSE
+  DUP [CHAR] a [CHAR] z 1+ WITHIN IF [CHAR] a - 10 + ELSE
   DROP EXIT THEN THEN THEN
   BASE @ OVER > IF     \ ud1 c-addr1 u1 n
     SWAP >R 2>R BASE @ \ ud1-lo ud1-hi base ; R: u1 c-addr n
