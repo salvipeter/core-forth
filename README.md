@@ -56,7 +56,7 @@ A few words are modeled after their implementation in
 
 ## Extra words
 
-The following words are not part of the *core* and *core extension* datasets:
+The following words are defined, but not part of the *core* and *core extension* datasets:
 
 - `COMPARE ( c-addr1 u1 c-addr2 u2 -- n )` compares two strings (part of the *string* wordset)
 - `DABS ( d -- ud )` computes the absolute value of a double cell (part of the *double* wordset)
@@ -69,6 +69,8 @@ The following words are not part of the *core* and *core extension* datasets:
 - `NAME>INTERPRET ( nt -- xt | 0 )` returns the interpretation semantics of the given name tag
    (part of the *tools extension* wordset); this implementation never returns `0`
 - `NAND ( x1 x2 -- x3 )` is the bitwise NAND operation
+- `PARSE-NUMBER ( c-addr n1 -- FALSE | n2 TRUE )` tries to parse the string as a number
+   (using `(PARSE-NUMBER)` and `(PARSE-BASE)` helper functions)
 
 An additional file (`utils.fs`) contains some standard utilities from the *tools* wordset:
 - `.S ( -- )`

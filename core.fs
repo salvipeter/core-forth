@@ -343,6 +343,24 @@ DEFER ABORT
 : ABORT" POSTPONE ?DUP POSTPONE IF
          POSTPONE ." POSTPONE CR POSTPONE ABORT POSTPONE THEN ; IMMEDIATE
 
+: (PARSE-NUMBER)
+  0 0 2SWAP OVER C@ [CHAR] - = OVER 1 > AND
+  IF -1 >R 1- SWAP 1+ SWAP ELSE 1 >R THEN >NUMBER
+  0= IF 2DROP R> * TRUE ELSE DROP 2DROP R> DROP FALSE THEN ;
+: (PARSE-BASE) BASE @ >R BASE ! 1- SWAP 1+ SWAP (PARSE-NUMBER) R> BASE ! ;
+: PARSE-NUMBER ( c-addr n1 -- FALSE | n2 TRUE )
+  OVER C@ CASE
+    [CHAR] # OF 10 (PARSE-BASE) ENDOF
+    [CHAR] $ OF 16 (PARSE-BASE) ENDOF
+    [CHAR] % OF  2 (PARSE-BASE) ENDOF
+    [CHAR] ' OF 3 = IF DUP 2 + C@ [CHAR] '
+                       = IF 1+ C@ TRUE
+                         ELSE DROP FALSE THEN
+                    ELSE DROP FALSE THEN
+             ENDOF
+    >R (PARSE-NUMBER) R>
+  ENDCASE ;
+
 \ Except for the first line, this is the same as the inner loop in QUIT.
 \ It would look better as its own INTERPRET function,
 \ but then it would clutter up the control stack, causing errors.
@@ -350,16 +368,13 @@ DEFER ABORT
            BEGIN
              SOURCE NIP >IN @ > WHILE
              BL WORD DUP C@
-             0<> IF >R 0 0 R@ COUNT OVER C@ [CHAR] - = OVER 1 > AND
-                    IF -1 >R 1- SWAP 1+ SWAP ELSE 1 >R THEN >NUMBER
-                    0= IF 2DROP R> * R> DROP               \ it's a number!
-                          STATE @ IF POSTPONE LITERAL THEN
-                       ELSE DROP 2DROP R> DROP R@ FIND     \ it's a word!
-                            DUP 0= IF [CHAR] ' EMIT R> COUNT TYPE
-                                      [CHAR] ' EMIT ."  not found" CR ABORT
-                                   ELSE R> DROP THEN
-                            0< STATE @ AND IF , ELSE EXECUTE THEN
-                       THEN
+             0<> IF DUP COUNT PARSE-NUMBER
+                    IF NIP STATE @ IF POSTPONE LITERAL THEN \ it's a number!
+                    ELSE FIND ?DUP                          \ it's a word!
+                         0= IF [CHAR] ' EMIT COUNT TYPE
+                               [CHAR] ' EMIT ."  not found" CR ABORT THEN
+                         0< STATE @ AND IF , ELSE EXECUTE THEN
+                    THEN
                  ELSE DROP THEN
            REPEAT ;
 
@@ -371,16 +386,13 @@ DEFER ABORT
          BEGIN
            SOURCE NIP >IN @ > WHILE
            BL WORD DUP C@
-           0<> IF >R 0 0 R@ COUNT OVER C@ [CHAR] - = OVER 1 > AND
-                  IF -1 >R 1- SWAP 1+ SWAP ELSE 1 >R THEN >NUMBER
-                  0= IF 2DROP R> * R> DROP               \ it's a number!
-                        STATE @ IF POSTPONE LITERAL THEN
-                     ELSE DROP 2DROP R> DROP R@ FIND     \ it's a word!
-                          DUP 0= IF [CHAR] ' EMIT R> COUNT TYPE
-                                    [CHAR] ' EMIT ."  not found" CR ABORT
-                                 ELSE R> DROP THEN
-                          0< STATE @ AND IF , ELSE EXECUTE THEN
-                     THEN
+           0<> IF DUP COUNT PARSE-NUMBER
+                  IF NIP STATE @ IF POSTPONE LITERAL THEN \ it's a number!
+                  ELSE FIND ?DUP                          \ it's a word!
+                       0= IF [CHAR] ' EMIT COUNT TYPE
+                             [CHAR] ' EMIT ."  not found" CR ABORT THEN
+                       0< STATE @ AND IF , ELSE EXECUTE THEN
+                  THEN
                ELSE DROP THEN
          REPEAT
          11 CELLS @ IF
@@ -389,7 +401,7 @@ DEFER ABORT
            17 CELLS @ CASE
              1 OF ."  ok" CR ENDOF
              2 OF [CHAR] < EMIT BL EMIT
-                  DEPTH 0 ?DO DEPTH I - 1- PICK . BL EMIT LOOP
+                  DEPTH 0 ?DO DEPTH I - 1- PICK . LOOP
                   [CHAR] > EMIT CR ENDOF
            ENDCASE
            REFILL DROP

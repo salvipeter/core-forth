@@ -2,7 +2,7 @@
 
 : .S ( -- )
   [CHAR] < EMIT BL EMIT
-  DEPTH 0 ?DO DEPTH I - 1- PICK . BL EMIT LOOP
+  DEPTH 0 ?DO DEPTH I - 1- PICK . LOOP
   [CHAR] > EMIT ;
 
 : FIND-HEADER ( xt -- c-addr )
