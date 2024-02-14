@@ -161,4 +161,5 @@ using VT100 control sequences (so it looks better on a terminal that understands
 The test framework and the test for the *core* wordset were developed by John Hayes,
 and those for the *core extension* wordset by Gerry Jackson.
 
-<TODO>
+Testing itself was an eye-opening experience. Who knew there could be so many bugs in my code?
+And there are still quite a few, I am sure, but at least now it passes all tests.
