@@ -328,16 +328,16 @@ TRUE \ Leave a true here, because the VM implementation of : does not
 : MARKER CREATE 1 CELLS @ @ , DOES> @ 1 CELLS ! ;
 
 : DEFER CREATE 0 , DOES> @ EXECUTE ;
-: DEFER@ 3 CELLS + @ ;
-: DEFER! 3 CELLS + ! ;
+: DEFER@ >BODY @ ;
+: DEFER! >BODY ! ;
 : IS STATE @ IF ( compilation ) ' POSTPONE LITERAL POSTPONE DEFER!
      ELSE ( interpretation ) ' DEFER! THEN ; IMMEDIATE
 : ACTION-OF STATE @ IF ( compilation ) ' POSTPONE LITERAL POSTPONE DEFER@
             ELSE ( interpretation ) ' DEFER@ THEN ; IMMEDIATE
 
 : VALUE CREATE , DOES> @ ;
-: TO STATE @ IF ( compilation ) ' 3 CELLS + POSTPONE LITERAL POSTPONE !
-     ELSE ( interpretation ) ' 3 CELLS + ! THEN ; IMMEDIATE
+: TO STATE @ IF ( compilation ) ' >BODY POSTPONE LITERAL POSTPONE !
+     ELSE ( interpretation ) ' >BODY ! THEN ; IMMEDIATE
 
 DEFER ABORT
 : ABORT" POSTPONE ?DUP POSTPONE IF
