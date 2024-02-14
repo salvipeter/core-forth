@@ -163,7 +163,12 @@ The test framework and the test for the *core* wordset were developed by John Ha
 and those for the *core extension* wordset by Gerry Jackson.
 
 Testing itself was an eye-opening experience. Who knew there could be so many bugs in my code?
-And there are still quite a few, I am sure, but at least now it passes all tests.
+And there are still quite a few, I am sure, but at least now it passes...
 
-One minor divergence is that since this implementation reads only from the standard input,
+- all tests in `test/prelimtest.fth`
+- all tests in `test/core.fr` (*)
+- all tests in `test/coreplustest.fth` except those related to `+LOOP`
+- some tests in `test/coreexttest.fth`
+
+(*) One minor divergence is that since this implementation reads only from the standard input,
 the test for `ACCEPT` is not very meaningful.
