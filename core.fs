@@ -39,7 +39,7 @@
 : FALSE 0 ;
 : TRUE -1 ;
 : - NEGATE + ;
-: 0> NEGATE 0< ;
+: 0> DUP 0< INVERT SWAP NEGATE 0< AND ;
 : 0= DUP 0< SWAP 0> OR INVERT ;
 : = - 0= ;
 : <> = INVERT ;
