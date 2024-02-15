@@ -171,7 +171,7 @@ And there are still quite a few, I am sure, but at least now it passes...
 - all tests in `test/prelimtest.fth`
 - all tests in `test/core.fr` (*)
 - all tests in `test/coreplustest.fth`
-- most tests in `test/coreexttest.fth` (errors in `?DO`, `PARSE`, `S\"`)
+- most tests in `test/coreexttest.fth` (errors in `PARSE`, `S\"`)
 
 (*) One minor divergence is that since this implementation reads only from the standard input,
 the test for `ACCEPT` is not very meaningful.
