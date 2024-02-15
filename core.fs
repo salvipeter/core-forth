@@ -238,14 +238,14 @@ PAD 200 ALIGNED - 2 CELLS !           \ User memory ends where scratch begins
 \   [..] compute x=(index-limit)+minint, and observe if the addition x+n
 \        crosses the boundary between minint and maxint.
 \ Note that minint is now stored in cell 15, and maxint = minint - 1.
-: +LOOP R> R> BEGIN DUP 0<> WHILE 1- R> [ 30 CELLS JUMP! ] REPEAT DROP >R
-        POSTPONE    R> POSTPONE   R> POSTPONE   ROT    POSTPONE     >R
-        POSTPONE  2DUP POSTPONE SWAP POSTPONE     - 15 POSTPONE LITERAL
-        POSTPONE CELLS POSTPONE    @ POSTPONE     +    POSTPONE    DUP
-        POSTPONE   DUP POSTPONE   R@ POSTPONE     +    POSTPONE    XOR
-        POSTPONE    0< POSTPONE SWAP POSTPONE    R@    POSTPONE    XOR
-        POSTPONE    0> POSTPONE  AND POSTPONE  SWAP    POSTPONE     R>
-        POSTPONE     + POSTPONE SWAP POSTPONE ?JUMP        HERE - ,
+: +LOOP R> R> BEGIN ?DUP 0<> WHILE 1- R> [ 31 CELLS JUMP! ] REPEAT >R
+        POSTPONE R>    POSTPONE R>     POSTPONE ROT  POSTPONE >R
+        POSTPONE 2DUP  POSTPONE SWAP   POSTPONE - 15 POSTPONE LITERAL
+        POSTPONE CELLS POSTPONE @      POSTPONE +    POSTPONE DUP
+        POSTPONE DUP   POSTPONE R@     POSTPONE +    POSTPONE XOR
+        POSTPONE 0<    POSTPONE SWAP   POSTPONE R@   POSTPONE XOR
+        POSTPONE 0<    POSTPONE INVERT POSTPONE AND  POSTPONE SWAP
+        POSTPONE R>    POSTPONE +      POSTPONE SWAP POSTPONE ?JUMP HERE - ,
         POSTPONE 2DROP ; IMMEDIATE
 
 : >NUMBER ( ud1 c-addr1 u1 -- ud2 c-addr2 u2 )
