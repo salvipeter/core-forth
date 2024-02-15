@@ -171,7 +171,15 @@ And there are still quite a few, I am sure, but at least now it passes...
 - all tests in `test/prelimtest.fth`
 - all tests in `test/core.fr` (*)
 - all tests in `test/coreplustest.fth`
-- most tests in `test/coreexttest.fth` (errors in `PARSE`, `S\"`)
+- almost all tests in `test/coreexttest.fth` (**)
 
-(*) One minor divergence is that since this implementation reads only from the standard input,
+(*) One minor deviation is that since this implementation reads only from the standard input,
 the test for `ACCEPT` is not very meaningful.
+
+(**) The only failing test is the last one:
+
+```forth
+: SSQ9  S\" 11 : SSQ10 S\\\" \\x32\\x32\" EVALUATE ; SSQ10 33" EVALUATE ;
+```
+
+This should leave `11 22 33` on the stack, but currently nested `EVALUATE`s are not supported.

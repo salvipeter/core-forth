@@ -193,8 +193,8 @@ PAD 200 ALIGNED - 2 CELLS !           \ User memory ends where scratch begins
 
 : PARSE ( char "ccc<char>" -- c-addr u )
   >IN @ SWAP OVER SOURCE ROT ?DO          \ >in char c-addr
-    1 >IN +! 2DUP I + C@ = IF LEAVE THEN
-  LOOP NIP OVER >R + >IN @ R> - 1- ;
+    1 >IN +! 2DUP I + C@ = IF NIP OVER >R + >IN @ R> - 1- UNLOOP EXIT THEN
+  LOOP NIP OVER >R + >IN @ R> - ;
 : PARSE-NAME ( "<spaces>name<space>" -- c-addr u )
   SOURCE >IN @ ?DO DUP I + C@ BL <> IF LEAVE THEN 1 >IN +! LOOP DROP
   >IN @ 0                                         \ >in correction
