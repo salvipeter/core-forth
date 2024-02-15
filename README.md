@@ -133,6 +133,8 @@ Note that the VM implementation of `:` does not leave anything on the stack.
 
 A dictionary entry has the following form:
 
+| Length  | Contents                                                          |
+|---------|-------------------------------------------------------------------|
 | 1 cell  | Link to previous entry (or 0 at the first entry)                  |
 | 1 bit   | 1 if immediate                                                    |
 | 2 bits  | (reserved)                                                        |
