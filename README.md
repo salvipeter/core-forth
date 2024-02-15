@@ -75,8 +75,9 @@ The following words are defined, but not part of the *core* and *core extension*
 An additional file (`utils.fs`) contains some standard utilities from the *tools* wordset:
 - `.S ( -- )`
 - `SEE ( "<spaces>name" -- )` [very rudimentary]
-It also provides a utility for selectively forgetting words by setting their name length to 0:
-- `FORGET-NAME ( "<spaces>name" -- )`
+
+It also provides some other useful words:
+- `FORGET-NAME ( "<spaces>name" -- )`  selectively forgets words by setting their name length to 0
 - `VERBOSITY! ( 0 | 1 | 2 -- )` sets the verbosity level of the interpreter
 
 ## About the virtual machine
