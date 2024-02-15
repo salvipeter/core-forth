@@ -261,9 +261,9 @@ PAD 200 ALIGNED - 2 CELLS !           \ User memory ends where scratch begins
     R> 1+ R> 1- RECURSE
   ELSE DROP THEN ;
 
-\ Very similar to S" but with backlash substitutions
-: S\" [CHAR] " PARSE POSTPONE JUMP HERE 0 , >R OVER + >R
+: S\" POSTPONE JUMP HERE 0 , >R SOURCE OVER + >R >IN @ +
       BEGIN \ c-addr ; R: size-addr end-addr
+        DUP R@ < OVER C@ [CHAR] " <> AND WHILE
         DUP C@ [CHAR] \ = IF
           1+ DUP C@ CASE
             [CHAR] a OF  7 ENDOF
@@ -284,8 +284,9 @@ PAD 200 ALIGNED - 2 CELLS !           \ User memory ends where scratch begins
             [CHAR] \ OF 92 ENDOF
             ." invalid escape sequence" CR
           ENDCASE
-        ELSE DUP C@ THEN C, 1+ DUP R@ < WHILE
-      REPEAT DROP R> DROP R>                     \ size-addr
+        ELSE DUP C@ THEN C, 1+
+      REPEAT
+      SOURCE DROP - 1+ >IN ! R> DROP R>          \ size-addr
       HERE OVER - 1 CELLS - >R ALIGN HERE OVER - \ size-addr a-len ; R: len
       DUP ROT ! HERE SWAP - CELL+                \ addr ; R: len
       POSTPONE LITERAL R> POSTPONE LITERAL ; IMMEDIATE
