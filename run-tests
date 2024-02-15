@@ -1,4 +1,5 @@
 #!/bin/bash
 cat core.fs test/prelimtest.fth test/tester.fr \
-    test/core.fr test/coreplustest.fth test/coreexttest.fth \
+    test/core.fr test/coreplustest.fth \
+    test/utilities.fth test/coreexttest.fth \
     | ./vm
